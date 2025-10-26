@@ -12,16 +12,16 @@ How to run:
 
 1. Install dependencies
 
-```bash
-bun install
-```
+    ```bash
+    bun install
+    ```
 
 2. Start (development)
 
-```bash
-bun run start:dev
-```
+    ```bash
+    bun run start:dev
+    ```
 
 3. Visit Swagger UI
 
-Open http://localhost:3000/api-docs
+    Open <http://localhost:3000/api-docs>
