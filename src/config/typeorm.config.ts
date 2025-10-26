@@ -9,7 +9,7 @@ export const TypeormConfig: TypeOrmModuleAsyncOptions = {
     password: process.env.DB_PASS || 'postgres',
     database: process.env.DB_NAME || 'cfs',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: false, // change to true only for dev
+    synchronize: process.env.TYPEORM_SYNC === 'true' || false,
     // TODO: adjust migrations and connection options
   }),
 };
