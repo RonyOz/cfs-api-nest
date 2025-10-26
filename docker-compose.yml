@@ -1,1 +1,23 @@
 # PostgreSQL DB
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cfs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cfs-network
+
+volumes:
+  postgres_data:
+
+networks:
+  cfs-network:
+    driver: bridge
