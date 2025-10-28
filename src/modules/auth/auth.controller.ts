@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
@@ -16,16 +16,17 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Signup succesful' })
   @ApiResponse({ status: 400, description: 'Email, password, and username are required' })
   @ApiResponse({ status: 409, description: 'User already exists' })
-  async signup(@Body() dto: SignupDto): Promise<{ message: string; token: string }> {
+  async signup(@Body() dto: SignupDto): Promise<{ message: string; jwt: string }> {
     return this.authService.signup(dto);
   }
 
   @Post('login')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Login and obtain a token' })
   @ApiResponse({ status: 200, description: 'Login succesful' })
   @ApiResponse({ status: 400, description: 'Email and password are required' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() dto: LoginDto): Promise<{ message: string; token: string }> {
+  async login(@Body() dto: LoginDto): Promise<{ message: string; jwt: string }> {
     return this.authService.login(dto);
   }
 
