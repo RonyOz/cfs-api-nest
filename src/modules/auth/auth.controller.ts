@@ -14,24 +14,27 @@ export class AuthController {
   @Post('signup')
   @ApiOperation({ summary: 'Sign up a new user' })
   @ApiResponse({ status: 201, description: 'Signup succesful' })
-  async signup(@Body() dto: SignupDto): Promise<{ message: string; token?: string }> {
-    // TODO: implement authService.signup
-    return { message: 'Signup succesful', token: 'TODO' };
+  @ApiResponse({ status: 400, description: 'Email, password, and username are required' })
+  @ApiResponse({ status: 409, description: 'User already exists' })
+  async signup(@Body() dto: SignupDto): Promise<{ message: string; token: string }> {
+    return this.authService.signup(dto);
   }
 
   @Post('login')
   @ApiOperation({ summary: 'Login and obtain a token' })
   @ApiResponse({ status: 200, description: 'Login succesful' })
-  async login(@Body() dto: LoginDto): Promise<{ message: string; token?: string }> {
-    // TODO: implement authService.login
-    return { message: 'Login succesful', token: 'TODO' };
+  @ApiResponse({ status: 400, description: 'Email and password are required' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async login(@Body() dto: LoginDto): Promise<{ message: string; token: string }> {
+    return this.authService.login(dto);
   }
 
   @Get('profile')
   @Auth()
   @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Returns authenticated user profile' })
+  @ApiResponse({ status: 401, description: 'No token provided or invalid token' })
   async profile(@GetUser() user: any) {
-    // Returns the authenticated user (from JWT token or mock if AUTH_DISABLED=true)
     return { user };
   }
 }
