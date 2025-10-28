@@ -19,7 +19,6 @@ export class Product {
   @Column('int', { default: 0 })
   stock: number;
 
-  // Relations
   @ManyToOne(() => User, (user) => user.products, { eager: false })
   seller: User;
 
