@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PaginationDto } from './dto/pagination.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
+import { UserEntity } from './entities/user.entity';
+import { ValidRoles } from '../auth/enums/roles.enum';
 
 @ApiTags('Users')
 @Controller('users')
@@ -11,39 +14,56 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Auth('admin')
+  @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Get all users (admin only)' })
-  async findAll() {
-    // TODO: enforce admin role and return users
-    return [];
+  @ApiResponse({ status: 200, description: 'List of users retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return this.usersService.findAll(paginationDto);
   }
 
   @Post()
-  @Auth('admin')
-  @ApiOperation({ summary: 'Create a user (admin only)' })
-  async create(@Body() dto: CreateUserDto) {
-    // TODO: call usersService.create
-    return { message: 'User created', user: 'TODO' };
+  @Auth(ValidRoles.admin)
+  @ApiOperation({ summary: 'Create a user manually (admin only)' })
+  @ApiResponse({ status: 201, description: 'User was created', type: UserEntity })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  async create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Get(':id')
   @Auth()
+  @ApiOperation({ summary: 'Get user by ID (authenticated)' })
+  @ApiResponse({ status: 200, description: 'User found', type: UserEntity })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(@Param('id') id: string) {
-    // TODO: return user by id
-    return { user: 'TODO' };
+    return this.usersService.findOne(id);
   }
 
   @Put(':id')
   @Auth()
-  async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    // TODO: update user
-    return { user: 'TODO' };
+  @ApiOperation({ summary: 'Update user (authenticated)' })
+  @ApiResponse({ status: 200, description: 'User updated successfully', type: UserEntity })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
-  @Auth('admin')
+  @Auth(ValidRoles.admin)
+  @ApiOperation({ summary: 'Delete user (admin only)' })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async remove(@Param('id') id: string) {
-    // TODO: delete user
-    return { message: 'Deleted' };
+    await this.usersService.remove(id);
+    return { message: 'User deleted successfully' };
   }
 }

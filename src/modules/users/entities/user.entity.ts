@@ -5,7 +5,9 @@ export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ 
+    type: 'text', 
+    unique: true })
   email: string;
 
   @Column()
@@ -14,6 +16,9 @@ export class UserEntity {
   @Column()
   password: string; // TODO: store hashed password
 
-  @Column({ default: 'user' })
+  @Column({ 
+    type: 'text',
+    default: ['user']
+  })
   role: string;
 }
