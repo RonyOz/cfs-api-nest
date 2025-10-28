@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
-export class UserEntity {
+export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -14,11 +14,17 @@ export class UserEntity {
   username: string;
 
   @Column()
-  password: string; // TODO: store hashed password
+  password: string;
 
   @Column({ 
     type: 'text',
     default: ['user']
   })
   role: string;
+
+  @Column({ type: 'varchar', nullable: true, default: null })
+  twoFactorSecret: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  twoFactorEnabled: boolean;
 }

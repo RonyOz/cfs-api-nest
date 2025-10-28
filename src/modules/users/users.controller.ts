@@ -5,7 +5,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
-import { UserEntity } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { ValidRoles } from '../auth/enums/roles.enum';
 
 @ApiTags('Users')
@@ -26,7 +26,7 @@ export class UsersController {
   @Post()
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Create a user manually (admin only)' })
-  @ApiResponse({ status: 201, description: 'User was created', type: UserEntity })
+  @ApiResponse({ status: 201, description: 'User was created', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
@@ -37,7 +37,7 @@ export class UsersController {
   @Get(':id')
   @Auth()
   @ApiOperation({ summary: 'Get user by ID (authenticated)' })
-  @ApiResponse({ status: 200, description: 'User found', type: UserEntity })
+  @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(@Param('id') id: string) {
@@ -47,7 +47,7 @@ export class UsersController {
   @Put(':id')
   @Auth()
   @ApiOperation({ summary: 'Update user (authenticated)' })
-  @ApiResponse({ status: 200, description: 'User updated successfully', type: UserEntity })
+  @ApiResponse({ status: 200, description: 'User updated successfully', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
