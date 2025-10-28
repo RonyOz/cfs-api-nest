@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { OrderItem } from '../../orders/entities/order-item.entity';
 
 @Entity('products')
 export class Product {
@@ -13,4 +15,14 @@ export class Product {
 
   @Column('decimal', { default: 0 })
   price: number;
+
+  @Column('int', { default: 0 })
+  stock: number;
+
+  // Relations
+  @ManyToOne(() => User, (user) => user.products, { eager: false })
+  seller: User;
+
+  @OneToMany(() => OrderItem, (item) => item.product)
+  orderItems: OrderItem[];
 }

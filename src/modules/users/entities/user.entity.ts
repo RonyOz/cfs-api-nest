@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Product } from '../../products/entities/product.entity';
+import { Order } from '../../orders/entities/order.entity';
 
 @Entity('users')
 export class User {
@@ -27,4 +29,11 @@ export class User {
 
   @Column({ type: 'boolean', default: false })
   twoFactorEnabled: boolean;
+
+  // Relations
+  @OneToMany(() => Product, (product) => product.seller)
+  products: Product[];
+
+  @OneToMany(() => Order, (order) => order.buyer)
+  orders: Order[];
 }
