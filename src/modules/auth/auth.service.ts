@@ -15,7 +15,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signup(dto: SignupDto): Promise<{ message: string; jwt: string }> {
+  async signup(dto: SignupDto): Promise<{ message: string; token: string }> {
     const existingUser = await this.usersRepository.findOne({ where: { email: dto.email } });
     if (existingUser) throw new ConflictException('User already exists');
     
@@ -30,12 +30,12 @@ export class AuthService {
     await this.usersRepository.save(user);
    
     const payload = { id: user.id, username: user.username, role: user.role };
-    const jwt = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
     
-    return { message: 'Signup succesful', jwt };
+    return { message: 'Signup succesful', token };
     }
 
-  async login(dto: LoginDto): Promise<{ message: string; jwt: string }> {
+  async login(dto: LoginDto): Promise<{ message: string; token: string }> {
     const user = await this.usersRepository.findOne({ where: { email: dto.email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
     
@@ -43,8 +43,8 @@ export class AuthService {
     if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
     
     const payload = { id: user.id, username: user.username, role: user.role };
-    const jwt = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
     
-    return { message: 'Login successful', jwt};
+    return { message: 'Login successful', token};
   }
 }
