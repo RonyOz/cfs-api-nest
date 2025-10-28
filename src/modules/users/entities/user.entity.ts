@@ -12,8 +12,14 @@ export class User {
   username: string;
 
   @Column()
-  password: string; // TODO: store hashed password
+  password: string;
 
   @Column({ default: 'user' })
   role: string;
+
+  @Column({ type: 'varchar', nullable: true, default: null })
+  twoFactorSecret: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  twoFactorEnabled: boolean;
 }
