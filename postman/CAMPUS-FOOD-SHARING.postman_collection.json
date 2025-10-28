@@ -1,0 +1,1566 @@
+{
+	"info": {
+		"_postman_id": "4a3d0aef-f1da-4980-99d5-c54deb7cb924",
+		"name": "CAMPUS-FOOD-SHARING",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32290862",
+		"_collection_link": "https://ronys-team.postman.co/workspace/Rony's-Team~cea67970-d29a-4808-88fa-c8c5feebf146/collection/48857260-4a3d0aef-f1da-4980-99d5-c54deb7cb924?action=share&source=collection_link&creator=32290862"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "2FA",
+					"item": [
+						{
+							"name": "Login Buyer 2FA",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Pre-request Script de Postman para generar TOTP\r",
+											"\r",
+											"function base32ToHex(base32) {\r",
+											"    const base32chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567\";\r",
+											"    let bits = \"\";\r",
+											"    let hex = \"\";\r",
+											"    \r",
+											"    base32 = base32.replace(/=+$/, ''); // Remover padding\r",
+											"\r",
+											"    for (let i = 0; i < base32.length; i++) {\r",
+											"        const val = base32chars.indexOf(base32.charAt(i).toUpperCase());\r",
+											"        if (val === -1) throw new Error('Invalid base32 character');\r",
+											"        bits += val.toString(2).padStart(5, '0');\r",
+											"    }\r",
+											"\r",
+											"    for (let i = 0; i + 8 <= bits.length; i += 8) {\r",
+											"        const chunk = bits.substr(i, 8);\r",
+											"        hex += parseInt(chunk, 2).toString(16).padStart(2, '0');\r",
+											"    }\r",
+											"\r",
+											"    return hex;\r",
+											"}\r",
+											"\r",
+											"function generateTOTP(secret) {\r",
+											"    const key = base32ToHex(secret);\r",
+											"    const epoch = Math.round(new Date().getTime() / 1000.0);\r",
+											"    const time = ('0000000000000000' + Math.floor(epoch / 30).toString(16)).slice(-16);\r",
+											"    \r",
+											"    const hmacObj = CryptoJS.HmacSHA1(\r",
+											"        CryptoJS.enc.Hex.parse(time),\r",
+											"        CryptoJS.enc.Hex.parse(key)\r",
+											"    );\r",
+											"    \r",
+											"    const hmac = hmacObj.toString(CryptoJS.enc.Hex);\r",
+											"    \r",
+											"    const offset = parseInt(hmac.charAt(hmac.length - 1), 16);\r",
+											"    const part1 = hmac.substr(offset * 2, 8);\r",
+											"    const otp = (parseInt(part1, 16) & 0x7fffffff) % 1000000;\r",
+											"    \r",
+											"    return otp.toString().padStart(6, '0');\r",
+											"}\r",
+											"\r",
+											"try {\r",
+											"    const secret = pm.collectionVariables.get(\"2fa_secret\")\r",
+											"    \r",
+											"    if (!secret) {\r",
+											"        console.error(\"No 2FA_SECRET found. Please set it in environment variables.\");\r",
+											"    } else {\r",
+											"        const token = generateTOTP(secret);\r",
+											"        pm.collectionVariables.set(\"2fa_token\", token);\r",
+											"    }\r",
+											"} catch (error) {\r",
+											"    console.error(\"Error generating TOTP:\", error.message);\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"const response = pm.response.json();",
+											"pm.collectionVariables.set(\"jwt\", response.token);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"buyer@example.com\",\n    \"password\": \"password123\",\n    \"token\":\"{{2fa_token}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/login",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								},
+								"description": "Inicia sesión como 'buyer' y guarda el token."
+							},
+							"response": []
+						},
+						{
+							"name": "Enable 2FA",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"const response = pm.response.json();",
+											"pm.collectionVariables.set(\"2fa_secret\", response.secret);",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/2fa/enable",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"auth",
+										"2fa",
+										"enable"
+									]
+								},
+								"description": "Inicia sesión como 'buyer' y guarda el token."
+							},
+							"response": []
+						},
+						{
+							"name": "Disable 2FA",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Pre-request Script de Postman para generar TOTP\r",
+											"\r",
+											"function base32ToHex(base32) {\r",
+											"    const base32chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567\";\r",
+											"    let bits = \"\";\r",
+											"    let hex = \"\";\r",
+											"    \r",
+											"    base32 = base32.replace(/=+$/, ''); // Remover padding\r",
+											"\r",
+											"    for (let i = 0; i < base32.length; i++) {\r",
+											"        const val = base32chars.indexOf(base32.charAt(i).toUpperCase());\r",
+											"        if (val === -1) throw new Error('Invalid base32 character');\r",
+											"        bits += val.toString(2).padStart(5, '0');\r",
+											"    }\r",
+											"\r",
+											"    for (let i = 0; i + 8 <= bits.length; i += 8) {\r",
+											"        const chunk = bits.substr(i, 8);\r",
+											"        hex += parseInt(chunk, 2).toString(16).padStart(2, '0');\r",
+											"    }\r",
+											"\r",
+											"    return hex;\r",
+											"}\r",
+											"\r",
+											"function generateTOTP(secret) {\r",
+											"    const key = base32ToHex(secret);\r",
+											"    const epoch = Math.round(new Date().getTime() / 1000.0);\r",
+											"    const time = ('0000000000000000' + Math.floor(epoch / 30).toString(16)).slice(-16);\r",
+											"    \r",
+											"    const hmacObj = CryptoJS.HmacSHA1(\r",
+											"        CryptoJS.enc.Hex.parse(time),\r",
+											"        CryptoJS.enc.Hex.parse(key)\r",
+											"    );\r",
+											"    \r",
+											"    const hmac = hmacObj.toString(CryptoJS.enc.Hex);\r",
+											"    \r",
+											"    const offset = parseInt(hmac.charAt(hmac.length - 1), 16);\r",
+											"    const part1 = hmac.substr(offset * 2, 8);\r",
+											"    const otp = (parseInt(part1, 16) & 0x7fffffff) % 1000000;\r",
+											"    \r",
+											"    return otp.toString().padStart(6, '0');\r",
+											"}\r",
+											"\r",
+											"try {\r",
+											"    const secret = pm.collectionVariables.get(\"2fa_secret\")\r",
+											"    \r",
+											"    if (!secret) {\r",
+											"        console.error(\"No 2FA_SECRET found. Please set it in environment variables.\");\r",
+											"    } else {\r",
+											"        const token = generateTOTP(secret);\r",
+											"        pm.collectionVariables.set(\"2fa_token\", token);\r",
+											"    }\r",
+											"} catch (error) {\r",
+											"    console.error(\"Error generating TOTP:\", error.message);\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"{{2fa_token}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/2fa/disable",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"auth",
+										"2fa",
+										"disable"
+									]
+								},
+								"description": "Inicia sesión como 'buyer' y guarda el token."
+							},
+							"response": []
+						},
+						{
+							"name": "Verify 2FA",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Pre-request Script de Postman para generar TOTP\r",
+											"\r",
+											"function base32ToHex(base32) {\r",
+											"    const base32chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567\";\r",
+											"    let bits = \"\";\r",
+											"    let hex = \"\";\r",
+											"    \r",
+											"    base32 = base32.replace(/=+$/, ''); // Remover padding\r",
+											"\r",
+											"    for (let i = 0; i < base32.length; i++) {\r",
+											"        const val = base32chars.indexOf(base32.charAt(i).toUpperCase());\r",
+											"        if (val === -1) throw new Error('Invalid base32 character');\r",
+											"        bits += val.toString(2).padStart(5, '0');\r",
+											"    }\r",
+											"\r",
+											"    for (let i = 0; i + 8 <= bits.length; i += 8) {\r",
+											"        const chunk = bits.substr(i, 8);\r",
+											"        hex += parseInt(chunk, 2).toString(16).padStart(2, '0');\r",
+											"    }\r",
+											"\r",
+											"    return hex;\r",
+											"}\r",
+											"\r",
+											"function generateTOTP(secret) {\r",
+											"    const key = base32ToHex(secret);\r",
+											"    const epoch = Math.round(new Date().getTime() / 1000.0);\r",
+											"    const time = ('0000000000000000' + Math.floor(epoch / 30).toString(16)).slice(-16);\r",
+											"    \r",
+											"    const hmacObj = CryptoJS.HmacSHA1(\r",
+											"        CryptoJS.enc.Hex.parse(time),\r",
+											"        CryptoJS.enc.Hex.parse(key)\r",
+											"    );\r",
+											"    \r",
+											"    const hmac = hmacObj.toString(CryptoJS.enc.Hex);\r",
+											"    \r",
+											"    const offset = parseInt(hmac.charAt(hmac.length - 1), 16);\r",
+											"    const part1 = hmac.substr(offset * 2, 8);\r",
+											"    const otp = (parseInt(part1, 16) & 0x7fffffff) % 1000000;\r",
+											"    \r",
+											"    return otp.toString().padStart(6, '0');\r",
+											"}\r",
+											"\r",
+											"try {\r",
+											"    const secret = pm.collectionVariables.get(\"2fa_secret\")\r",
+											"    \r",
+											"    if (!secret) {\r",
+											"        console.error(\"No 2FA_SECRET found. Please set it in environment variables.\");\r",
+											"    } else {\r",
+											"        const token = generateTOTP(secret);\r",
+											"        pm.collectionVariables.set(\"2fa_token\", token);\r",
+											"    }\r",
+											"} catch (error) {\r",
+											"    console.error(\"Error generating TOTP:\", error.message);\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"{{2fa_token}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/2fa/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"auth",
+										"2fa",
+										"verify"
+									]
+								},
+								"description": "Inicia sesión como 'buyer' y guarda el token."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Signup Buyer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"jwt\", response.token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testbuyer\",\n    \"email\": \"buyer@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Registra un nuevo usuario con rol de 'buyer' y guarda su token."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Buyer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"jwt\", response.token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"buyer@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión como 'buyer' y guarda el token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"buyer_id\", response.user._id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Obtiene el perfil del usuario autenticado."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"admin_token\", response.token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión como admin para obtener un token con privilegios."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Admin User (Run Manually First)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"admin_user_id\", response._id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"adminuser\",\n    \"email\": \"admin@example.com\",\n    \"password\": \"adminpass123\",\n    \"role\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Endpoint para crear un usuario. Se usa aquí para crear un admin. Necesita un token de admin, por lo que este es un paso inicial de configuración."
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Creates Seller",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"seller_id\", response._id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testseller\",\n    \"email\": \"seller@example.com\",\n    \"password\": \"sellerpass123\",\n    \"role\": \"seller\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/user",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"user"
+							]
+						},
+						"description": "Un admin crea un nuevo usuario con rol de 'seller'."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Login as Seller",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"seller_token\", response.token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"seller@example.com\",\n    \"password\": \"sellerpass123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión como seller para gestionar productos."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"product_id\", response.product._id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGRjNTZmZGNmM2U0N2NiZTUyZjJhYjgiLCJlbWFpbCI6ImJ1eWVyQGV4YW1wbGUuY29tIiwicm9sZSI6ImJ1eWVyIiwiaWF0IjoxNzU5MjcwNjYyLCJleHAiOjE3NTkyNzQyNjJ9.yqXojVJq092FUOxHDntAAwK2eA3CZIYsiWQe5YjYU34",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Hamburguesa Clásica\",\n    \"description\": \"Carne de 150g, queso, lechuga y tomate\",\n    \"price\": 12.50,\n    \"available\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products"
+							]
+						},
+						"description": "Crea un nuevo producto (seller o admin)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{seller_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products"
+							]
+						},
+						"description": "Obtiene la lista de todos los productos (público)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{seller_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/{{product_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Obtiene un producto específico por su ID (público)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{seller_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": 13.00,\n    \"available\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products/{{product_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Actualiza un producto existente (seller o admin)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Seller",
+			"item": [
+				{
+					"name": "List All Sellers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/seller",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"seller"
+							]
+						},
+						"description": "Obtiene la lista pública de todos los vendedores."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Seller Public Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/seller/{{seller_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"seller",
+								"{{seller_id}}"
+							]
+						},
+						"description": "Obtiene el perfil público de un vendedor, incluyendo sus productos."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Obtiene la lista de todos los usuarios (solo admin)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{seller_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{seller_id}}"
+							]
+						},
+						"description": "Obtiene un usuario específico por su ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"updated_seller_username\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{seller_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{seller_id}}"
+							]
+						},
+						"description": "Actualiza la información de un usuario."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.collectionVariables.set(\"order_id\", response.order._id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"productId\": \"{{product_id}}\",\n            \"quantity\": 2\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"description": "Un 'buyer' crea una nueva orden."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{order_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{order_id}}"
+							]
+						},
+						"description": "Obtiene los detalles de una orden específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (as Seller)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{seller_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"accepted\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{order_id}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{order_id}}",
+								"status"
+							]
+						},
+						"description": "Un 'seller' o 'admin' actualiza el estado de una orden."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders (as Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"description": "Obtiene la lista de todas las órdenes (solo admin)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DELETES",
+			"item": [
+				{
+					"name": "Cancel Order (Delete)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{order_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{order_id}}"
+							]
+						},
+						"description": "Cancela una orden."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{seller_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/{{product_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Elimina un producto (seller o admin)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User Seller",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{seller_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{seller_id}}"
+							]
+						},
+						"description": "Elimina un usuario (solo admin)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User Buyer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{buyer_id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{buyer_id}}"
+							]
+						},
+						"description": "Elimina un usuario (solo admin)."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "buyer_id",
+			"value": ""
+		},
+		{
+			"key": "admin_user_id",
+			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		},
+		{
+			"key": "seller_id",
+			"value": ""
+		},
+		{
+			"key": "seller_token",
+			"value": ""
+		},
+		{
+			"key": "product_id",
+			"value": ""
+		},
+		{
+			"key": "order_id",
+			"value": ""
+		},
+		{
+			"key": "jwt",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "2fa_secret",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "2fa_token",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
