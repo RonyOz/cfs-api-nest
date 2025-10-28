@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -31,6 +31,7 @@ export class ProductsController {
 
   @Post()
   @Auth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new product (authenticated)' })
   @ApiResponse({ status: 201, description: 'Product was created', type: Product })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -44,6 +45,7 @@ export class ProductsController {
 
   @Put(':id')
   @Auth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update product (owner or admin only)' })
   @ApiResponse({ status: 200, description: 'Product updated successfully', type: Product })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -60,6 +62,7 @@ export class ProductsController {
 
   @Delete(':id')
   @Auth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete product (owner or admin only)' })
   @ApiResponse({ status: 200, description: 'Product deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

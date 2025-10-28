@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -15,6 +15,7 @@ export class UsersController {
 
   @Get()
   @Auth(ValidRoles.admin)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users (admin only)' })
   @ApiResponse({ status: 200, description: 'List of users retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -25,6 +26,7 @@ export class UsersController {
 
   @Post()
   @Auth(ValidRoles.admin)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a user manually (admin only)' })
   @ApiResponse({ status: 201, description: 'User was created', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -36,6 +38,7 @@ export class UsersController {
 
   @Get(':id')
   @Auth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID (authenticated)' })
   @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -46,6 +49,7 @@ export class UsersController {
 
   @Put(':id')
   @Auth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user (authenticated)' })
   @ApiResponse({ status: 200, description: 'User updated successfully', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -57,6 +61,7 @@ export class UsersController {
 
   @Delete(':id')
   @Auth(ValidRoles.admin)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user (admin only)' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
