@@ -2,12 +2,11 @@ import { Controller, Post, Body, Get, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { Login2FADto } from './dto/login-2fa.dto';
 import { Verify2FADto } from './dto/verify-2fa.dto';
 import { Auth } from './decorators/auth.decorator';
 import { GetUser } from './decorators/get-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -25,20 +24,12 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Login and obtain a token' })
-  @ApiResponse({ status: 200, description: 'Login succesful' })
+  @ApiOperation({ summary: 'Login with optional 2FA support' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 400, description: 'Email and password are required' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials or 2FA token required' })
   async login(@Body() dto: LoginDto): Promise<{ message: string; token: string }> {
     return this.authService.login(dto);
-  }
-
-  @Post('login/2fa')
-  @HttpCode(200)
-  @ApiOperation({ summary: 'Login with 2FA support' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  async loginWith2FA(@Body() dto: Login2FADto): Promise<{ message: string; token: string }> {
-    return this.authService.loginWith2FA(dto);
   }
 
   @Post('2fa/enable')

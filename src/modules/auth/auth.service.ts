@@ -3,13 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SignupDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
-import { Login2FADto } from './dto/login-2fa.dto';
 import { Verify2FADto } from './dto/verify-2fa.dto';
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -40,19 +39,6 @@ export class AuthService {
     }
 
   async login(dto: LoginDto): Promise<{ message: string; token: string }> {
-    const user = await this.usersRepository.findOne({ where: { email: dto.email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
-    
-    const payload = { id: user.id, username: user.username, role: user.role };
-    const token = this.jwtService.sign(payload);
-    
-    return { message: 'Login successful', token};
-  }
-
-  async loginWith2FA(dto: Login2FADto): Promise<{ message: string; token: string }> {
     const user = await this.usersRepository.findOne({ where: { email: dto.email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
     
