@@ -49,9 +49,9 @@ export class User {
   twoFactorEnabled: boolean;
 
   // Relations
-  @OneToMany(() => Product, (product) => product.seller, { lazy: true })
+  @OneToMany('Product', 'seller')
   products: Product[];
 
-  @OneToMany(() => Order, (order) => order.buyer, { lazy: true })
+  @OneToMany('Order', 'buyer')
   orders: Order[];
 }
