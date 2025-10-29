@@ -13,9 +13,9 @@ export class OrderItem {
   @Column('decimal')
   price: number; // Precio del producto al momento de la compra
 
-  @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
+  @ManyToOne('Order', 'items', { onDelete: 'CASCADE' })
   order: Order;
 
-  @ManyToOne(() => Product, (product) => product.orderItems, { eager: true })
+  @ManyToOne('Product', 'orderItems', { eager: true })
   product: Product;
 }

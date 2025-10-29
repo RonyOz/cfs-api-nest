@@ -45,9 +45,9 @@ export class Product {
     description: 'Product seller information',
     type: () => User,
   })
-  @ManyToOne(() => User, (user) => user.products, { eager: false })
+  @ManyToOne('User', 'products', { eager: false })
   seller: User;
 
-  @OneToMany(() => OrderItem, (item) => item.product)
+  @OneToMany('OrderItem', 'product')
   orderItems: OrderItem[];
 }

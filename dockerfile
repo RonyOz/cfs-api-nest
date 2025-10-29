@@ -1,12 +1,21 @@
-# Use the official Bun image as the base image
-FROM oven/bun:1 
+# Use Node.js LTS
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN bun install
+
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
 COPY . .
 
+# Build the application
+RUN npm run build
+
+# Remove devDependencies after build
+RUN npm prune --production
+
 EXPOSE 3000
-CMD ["bun", "run", "start"]
+
+CMD ["node", "dist/main"]
