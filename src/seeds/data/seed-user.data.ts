@@ -17,4 +17,23 @@ export const seedUsers = [
         password: 'password',
         role: 'user',
     },
+    {
+        email: 'carla@example.com',
+        username: 'carla',
+        password: 'password',
+        role: 'user',
+    },
+    {
+        email: 'dave@example.com',
+        username: 'dave',
+        password: 'password',
+        role: 'user',
+    },
+    {
+        email: 'emily@example.com',
+        username: 'emily',
+        password: 'password',
+        role: 'user',
+    },
 ];
+
