@@ -8,6 +8,9 @@ import { ConflictException, UnauthorizedException, BadRequestException } from '@
 import * as bcrypt from 'bcrypt';
 import * as speakeasy from 'speakeasy';
 
+jest.mock('bcrypt');
+jest.mock('speakeasy');
+
 describe('AuthService', () => {
   let service: AuthService;
   let userRepository: Repository<User>;
@@ -105,7 +108,7 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      const hashedPassword = 'hashedPassword123';
       const mockUser = {
         id: '123',
         email: loginDto.email,
@@ -117,8 +120,7 @@ describe('AuthService', () => {
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('test-token');
-
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.login(loginDto);
 
@@ -147,7 +149,7 @@ describe('AuthService', () => {
         password: 'wrongpassword',
       };
 
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      const hashedPassword = 'hashedPassword123';
       const mockUser = {
         id: '123',
         email: loginDto.email,
@@ -156,7 +158,7 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
     });
@@ -167,7 +169,7 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      const hashedPassword = 'hashedPassword123';
       const mockUser = {
         id: '123',
         email: loginDto.email,
@@ -177,7 +179,7 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { email: loginDto.email } });
@@ -193,10 +195,10 @@ describe('AuthService', () => {
         twoFactorSecret: null,
       } as User;
 
-      jest.spyOn(speakeasy, 'generateSecret').mockReturnValue({
+      (speakeasy.generateSecret as jest.Mock).mockReturnValue({
         base32: 'TESTSECRET',
         otpauth_url: 'otpauth://totp/test',
-      } as any);
+      });
 
       mockUserRepository.save.mockResolvedValue(mockUser);
 
@@ -234,7 +236,7 @@ describe('AuthService', () => {
         token: '123456',
       };
 
-      jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true);
+      (speakeasy.totp.verify as jest.Mock).mockReturnValue(true);
       mockUserRepository.save.mockResolvedValue({ ...mockUser, twoFactorEnabled: true });
 
       const result = await service.verify2FA(mockUser, verify2FADto);
@@ -271,7 +273,7 @@ describe('AuthService', () => {
         token: 'invalid',
       };
 
-      jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(false);
+      (speakeasy.totp.verify as jest.Mock).mockReturnValue(false);
 
       await expect(service.verify2FA(mockUser, verify2FADto)).rejects.toThrow(UnauthorizedException);
       expect(mockUserRepository.save).not.toHaveBeenCalled();
@@ -291,7 +293,7 @@ describe('AuthService', () => {
         token: '123456',
       };
 
-      jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true);
+      (speakeasy.totp.verify as jest.Mock).mockReturnValue(true);
       mockUserRepository.save.mockResolvedValue({ ...mockUser, twoFactorEnabled: false, twoFactorSecret: null });
 
       const result = await service.disable2FA(mockUser, verify2FADto);
@@ -328,7 +330,7 @@ describe('AuthService', () => {
         token: 'invalid',
       };
 
-      jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(false);
+      (speakeasy.totp.verify as jest.Mock).mockReturnValue(false);
 
       await expect(service.disable2FA(mockUser, verify2FADto)).rejects.toThrow(UnauthorizedException);
       expect(mockUserRepository.save).not.toHaveBeenCalled();

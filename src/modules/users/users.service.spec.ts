@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
+jest.mock('bcrypt');
+
 describe('UsersService', () => {
   let service: UsersService;
   let repository: Repository<User>;
@@ -238,7 +240,7 @@ describe('UsersService', () => {
       mockUserRepository.save.mockResolvedValue(mockUser);
       mockUserRepository.findOne.mockResolvedValue(mockUser);
 
-      jest.spyOn(bcrypt, 'hash').mockImplementation(() => Promise.resolve('newhashedpassword'));
+      (bcrypt.hash as jest.Mock).mockResolvedValue('newhashedpassword');
 
       await service.update('123', updateUserDto);
 
