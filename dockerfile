@@ -4,11 +4,17 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
 COPY . .
 
+# Build the application
 RUN npm run build
+
+# Remove devDependencies after build
+RUN npm prune --production
 
 EXPOSE 3000
 
