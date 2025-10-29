@@ -14,7 +14,7 @@ export class Order {
   @Column('decimal', { default: 0 })
   total: number;
 
-  @ManyToOne(() => User, (user) => user.orders, { eager: false })
+  @ManyToOne(() => User, (user) => user.orders, { eager: false, lazy: true })
   buyer: User;
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true, eager: true })
