@@ -6,6 +6,7 @@ import { SignupDto } from '../../src/modules/auth/dto/signup.dto';
 import { Verify2FADto } from '../../src/modules/auth/dto/verify-2fa.dto';
 import { User } from '../../src/modules/users/entities/user.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { PassportModule } from '@nestjs/passport';
 
 describe('AuthController', () => {
     let controller: AuthController;
@@ -39,6 +40,7 @@ describe('AuthController', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
+            imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
             controllers: [AuthController],
             providers: [
                 {

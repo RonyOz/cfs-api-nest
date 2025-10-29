@@ -6,6 +6,7 @@ import { UpdateProductDto } from '../../src/modules/products/dto/update-product.
 import { PaginationDto } from '../../src/modules/products/dto/pagination.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
+import { PassportModule } from '@nestjs/passport';
 
 describe('ProductsController', () => {
     let controller: ProductsController;
@@ -44,6 +45,7 @@ describe('ProductsController', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
+            imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
             controllers: [ProductsController],
             providers: [
                 {
