@@ -6,13 +6,19 @@ import { CreateOrderDto } from './dto/create-order.dto';
 @ApiTags('Orders')
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create an order' })
   async create(@Body() dto: CreateOrderDto) {
     // TODO: create order
     return { message: 'Order created', order: 'TODO' };
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all orders (public)' })
+  async findAll() {
+    return this.ordersService.findAll();
   }
 
   @Get(':id')

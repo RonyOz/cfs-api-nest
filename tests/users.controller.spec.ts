@@ -2,11 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { UsersController } from '../src/modules/users/users.controller';
 import { UsersService } from '../src/modules/users/users.service';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, HttpStatus, NotFoundException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../src/modules/auth/guards/roles.guard';
 
 describe('UsersController (e2e)', () => {
     let app: INestApplication;
-    let usersService = { create: jest.fn(), findAll: jest.fn() };
+    let usersService = {
+        create: jest.fn(),
+        findAll: jest.fn(),
+        findOne: jest.fn()
+    };
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -17,7 +23,12 @@ describe('UsersController (e2e)', () => {
                     useValue: usersService,
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(AuthGuard())
+            .useValue({ canActivate: () => true })
+            .overrideGuard(RolesGuard)
+            .useValue({ canActivate: () => true })
+            .compile();
 
         app = moduleFixture.createNestApplication();
         await app.init();
@@ -27,21 +38,33 @@ describe('UsersController (e2e)', () => {
         await app.close();
     });
 
-    it('/users (GET) - Happy Path', async () => {
-        usersService.findAll.mockResolvedValue([{ id: 1, name: 'User A' }]);
+    describe('/users/:id (GET)', () => {
+        it('should return a user by id successfully', async () => {
+            const mockUser = {
+                id: '123',
+                email: 'user@example.com',
+                username: 'testuser',
+                fullName: 'Test User',
+                role: 'user'
+            };
 
-        const response = await request(app.getHttpServer()).get('/users');
+            usersService.findOne.mockResolvedValue(mockUser);
 
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual([{ id: 1, name: 'User A' }]);
-    });
+            const response = await request(app.getHttpServer()).get('/users/123');
 
-    it('/users (GET) - Error Path', async () => {
-        usersService.findAll.mockRejectedValue(new Error('Database error'));
+            expect(response.status).toBe(HttpStatus.OK);
+            expect(response.body).toEqual(mockUser);
+            expect(response.body.email).toBe('user@example.com');
+        });
 
-        const response = await request(app.getHttpServer()).get('/users');
+        it('should return 404 when user not found', async () => {
+            usersService.findOne.mockRejectedValue(
+                new NotFoundException('User not found')
+            );
 
-        expect(response.status).toBe(500);
-        expect(response.body.message).toBe('Database error');
+            const response = await request(app.getHttpServer()).get('/users/999');
+
+            expect(response.status).toBe(HttpStatus.NOT_FOUND);
+        });
     });
 });

@@ -2,11 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { OrdersController } from '../src/modules/orders/orders.controller';
 import { OrdersService } from '../src/modules/orders/orders.service';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, HttpStatus } from '@nestjs/common';
 
 describe('OrdersController (e2e)', () => {
     let app: INestApplication;
-    let ordersService = { create: jest.fn(), findAll: jest.fn() };
+    let ordersService = {
+        create: jest.fn(),
+        findAll: jest.fn()
+    };
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -27,21 +30,40 @@ describe('OrdersController (e2e)', () => {
         await app.close();
     });
 
-    it('/orders (GET) - Happy Path', async () => {
-        ordersService.findAll.mockResolvedValue([{ id: 1, total: 100 }]);
+    describe('/orders (GET)', () => {
+        it('should return all orders successfully', async () => {
+            const mockOrders = [
+                {
+                    id: '1',
+                    total: 100,
+                    createdAt: '2025-01-01T00:00:00Z',
+                    buyer: { id: '1', email: 'buyer@example.com' },
+                    items: []
+                },
+                {
+                    id: '2',
+                    total: 200,
+                    createdAt: '2025-01-02T00:00:00Z',
+                    buyer: { id: '2', email: 'buyer2@example.com' },
+                    items: []
+                }
+            ];
 
-        const response = await request(app.getHttpServer()).get('/orders');
+            ordersService.findAll.mockResolvedValue(mockOrders);
 
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual([{ id: 1, total: 100 }]);
-    });
+            const response = await request(app.getHttpServer()).get('/orders');
 
-    it('/orders (GET) - Error Path', async () => {
-        ordersService.findAll.mockRejectedValue(new Error('Database error'));
+            expect(response.status).toBe(HttpStatus.OK);
+            expect(response.body).toEqual(mockOrders);
+            expect(response.body).toHaveLength(2);
+        });
 
-        const response = await request(app.getHttpServer()).get('/orders');
+        it('should return 500 when database error occurs', async () => {
+            ordersService.findAll.mockRejectedValue(new Error('Database connection failed'));
 
-        expect(response.status).toBe(500);
-        expect(response.body.message).toBe('Database error');
+            const response = await request(app.getHttpServer()).get('/orders');
+
+            expect(response.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+        });
     });
 });

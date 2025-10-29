@@ -55,4 +55,8 @@ export class OrdersService {
   async findOne(id: string) {
     return await this.orderRepository.findOne({ where: { id }, relations: ['items', 'buyer'] });
   }
+
+  async findAll() {
+    return this.orderRepository.find({ relations: ['items', 'buyer'] });
+  }
 }

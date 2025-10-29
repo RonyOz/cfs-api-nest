@@ -6,9 +6,13 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, User])],
+  imports: [
+    TypeOrmModule.forFeature([Order, OrderItem, Product, User]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+  ],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],
