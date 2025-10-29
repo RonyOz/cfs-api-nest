@@ -1,14 +1,15 @@
-# Use the official Bun image as the base image
-FROM oven/bun:1 
+# Use Node.js LTS
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN bun install
+RUN npm ci --only=production
 
 COPY . .
 
-RUN bun run build
+RUN npm run build
 
 EXPOSE 3000
-CMD ["bun", "run", "start:prod"]
+
+CMD ["node", "dist/main"]
