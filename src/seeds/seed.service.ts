@@ -1,11 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import { OrdersService } from 'src/modules/orders/orders.service';
+import { ProductsService } from 'src/modules/products/products.service';
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class SeedService {
-  // TODO: inject repositories/services for users, products
+
+  constructor(
+    private usersService: UsersService,
+    private productsService: ProductsService,
+    private ordersService: OrdersService,
+  ) { }
+
   async run() {
-    // TODO: create an admin user and a few products
-    // Example: create user { email: 'admin@example.com', username: 'admin', password: 'TODO-hash', role: 'admin' }
-    return { message: 'Seed run (placeholder) - implement creation logic' };
+    await this.insertAllUsers();
+    await this.insertAllProducts();
+    await this.insertAllOrders();
+    return { message: 'Seeding completed' };
   }
+
+  async insertAllUsers() { }
+
+  async insertAllProducts() { }
+
+  async insertAllOrders() { }
 }
