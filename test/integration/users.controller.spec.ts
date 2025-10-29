@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { UsersController } from '../src/modules/users/users.controller';
-import { UsersService } from '../src/modules/users/users.service';
+import { UsersController } from '../../src/modules/users/users.controller';
+import { UsersService } from '../../src/modules/users/users.service';
 import { INestApplication, HttpStatus, NotFoundException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from '../src/modules/auth/guards/roles.guard';
+import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 
 describe('UsersController (e2e)', () => {
     let app: INestApplication;

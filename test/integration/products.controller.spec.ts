@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { ProductsController } from '../src/modules/products/products.controller';
-import { ProductsService } from '../src/modules/products/products.service';
+import { ProductsController } from '../../src/modules/products/products.controller';
+import { ProductsService } from '../../src/modules/products/products.service';
 import { INestApplication, HttpStatus } from '@nestjs/common';
 
 describe('ProductsController (e2e)', () => {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AuthController } from '../src/modules/auth/auth.controller';
-import { AuthService } from '../src/modules/auth/auth.service';
+import { AuthController } from '../../src/modules/auth/auth.controller';
+import { AuthService } from '../../src/modules/auth/auth.service';
 import { INestApplication, HttpStatus, UnauthorizedException } from '@nestjs/common';
 
 describe('AuthController (e2e)', () => {
