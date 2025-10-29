@@ -17,6 +17,15 @@
     "/src/",
     "/test/unit/"
   ],
+  "collectCoverageFrom": [
+    "src/**/*.(t|j)s",
+    "!src/main.ts",
+    "!src/**/*.module.ts",
+    "!src/**/*.entity.ts",
+    "!src/**/*.dto.ts",
+    "!src/seeds/**"
+  ],
+  "coverageDirectory": "./coverage-e2e",
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1"
   }
