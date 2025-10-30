@@ -4,7 +4,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['api-docs'],
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Campus Food Sharing (scaffold)')
