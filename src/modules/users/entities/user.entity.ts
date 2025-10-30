@@ -52,6 +52,9 @@ export class User {
   @OneToMany('Product', 'seller')
   products: Product[];
 
-  @OneToMany('Order', 'buyer')
+  // @OneToMany('Order', 'buyer')
+  // orders: Order[];
+
+  @OneToMany(() => Order, (order) => order.buyer)
   orders: Order[];
 }

@@ -100,7 +100,7 @@ export class SeedService {
 
       if (skip) continue;
 
-      await this.ordersService.create({ buyerId: (buyer as any).id, items, total });
+      await this.ordersService.create({ items }, buyer);
       this.logger.log(`Created order for ${o.buyerEmail}`);
     }
   }

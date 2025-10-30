@@ -48,6 +48,9 @@ export class Product {
   @ManyToOne('User', 'products', { eager: false })
   seller: User;
 
-  @OneToMany('OrderItem', 'product')
+// @OneToMany('OrderItem', 'product')
+// orderItems: OrderItem[];
+
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems: OrderItem[];
 }
