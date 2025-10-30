@@ -5,7 +5,7 @@ import { Order } from '../../src/modules/orders/entities/order.entity';
 import { OrderItem } from '../../src/modules/orders/entities/order-item.entity';
 import { Product } from '../../src/modules/products/entities/product.entity';
 import { User } from '../../src/modules/users/entities/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
 
 describe('OrdersService', () => {
@@ -14,6 +14,7 @@ describe('OrdersService', () => {
     let orderItemRepository: Repository<OrderItem>;
     let productRepository: Repository<Product>;
     let userRepository: Repository<User>;
+    let mockQueryRunner: any;
 
     const mockOrderRepository = {
         count: jest.fn(),
@@ -36,6 +37,24 @@ describe('OrdersService', () => {
     };
 
     beforeEach(async () => {
+        // Crear mockQueryRunner DENTRO del beforeEach para que se reinicie
+        mockQueryRunner = {
+            connect: jest.fn(),
+            startTransaction: jest.fn(),
+            commitTransaction: jest.fn(),
+            rollbackTransaction: jest.fn(),
+            release: jest.fn(),
+            manager: {
+                findOne: jest.fn(),
+                save: jest.fn(),
+                create: jest.fn(),
+            },
+        };
+
+        const mockDataSource = {
+            createQueryRunner: jest.fn(() => mockQueryRunner),
+        };
+
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 OrdersService,
@@ -54,6 +73,10 @@ describe('OrdersService', () => {
                 {
                     provide: getRepositoryToken(User),
                     useValue: mockUserRepository,
+                },
+                {
+                    provide: DataSource,
+                    useValue: mockDataSource,
                 },
             ],
         }).compile();
@@ -101,6 +124,8 @@ describe('OrdersService', () => {
                 id: 'product1',
                 name: 'Test Product',
                 price: 10.99,
+                stock: 10,
+                seller: { id: 'seller1' },
             };
 
             const mockOrderItem = {
@@ -119,47 +144,46 @@ describe('OrdersService', () => {
             };
 
             const createOrderDto = {
-                buyerId: 'buyer1',
                 items: [
                     {
                         productId: 'product1',
                         quantity: 2,
-                        price: 10.99,
                     },
                 ],
-                total: 21.98,
             };
 
-            mockUserRepository.findOne.mockResolvedValue(mockBuyer);
-            mockProductRepository.findOne.mockResolvedValue(mockProduct);
-            mockOrderRepository.create.mockReturnValue(mockOrder);
-            mockOrderItemRepository.create.mockReturnValue(mockOrderItem);
-            mockOrderRepository.save.mockResolvedValue(mockOrder);
+            // Configurar mocks del QueryRunner
+            mockQueryRunner.manager.findOne.mockResolvedValue(mockProduct);
+            mockQueryRunner.manager.save.mockResolvedValue(mockOrder);
+            mockQueryRunner.manager.create.mockImplementation((entity, data) => data);
+            mockOrderRepository.findOne.mockResolvedValue(mockOrder);
 
-            const result = await service.create(createOrderDto);
+            const result = await service.create(createOrderDto, mockBuyer as any);
 
             expect(result).toEqual(mockOrder);
-            expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: 'buyer1' } });
-            expect(mockProductRepository.findOne).toHaveBeenCalledWith({ where: { id: 'product1' } });
-            expect(mockOrderRepository.save).toHaveBeenCalled();
+            expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
         });
 
         it('should throw NotFoundException if buyer not found (error path)', async () => {
+            const mockBuyer = {
+                id: 'buyer1',
+                email: 'buyer@example.com',
+            };
+
             const createOrderDto = {
-                buyerId: 'nonexistent',
                 items: [
                     {
                         productId: 'product1',
                         quantity: 2,
-                        price: 10.99,
                     },
                 ],
             };
 
-            mockUserRepository.findOne.mockResolvedValue(null);
+            // Producto no encontrado
+            mockQueryRunner.manager.findOne.mockResolvedValue(null);
 
-            await expect(service.create(createOrderDto)).rejects.toThrow(NotFoundException);
-            expect(mockOrderRepository.save).not.toHaveBeenCalled();
+            await expect(service.create(createOrderDto, mockBuyer as any)).rejects.toThrow(NotFoundException);
+            expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
         });
 
         it('should throw NotFoundException if product not found (error path)', async () => {
@@ -169,22 +193,18 @@ describe('OrdersService', () => {
             };
 
             const createOrderDto = {
-                buyerId: 'buyer1',
                 items: [
                     {
                         productId: 'nonexistent',
                         quantity: 2,
-                        price: 10.99,
                     },
                 ],
             };
 
-            mockUserRepository.findOne.mockResolvedValue(mockBuyer);
-            mockProductRepository.findOne.mockResolvedValue(null);
-            mockOrderRepository.create.mockReturnValue({ items: [] });
+            mockQueryRunner.manager.findOne.mockResolvedValue(null);
 
-            await expect(service.create(createOrderDto)).rejects.toThrow(NotFoundException);
-            expect(mockOrderRepository.save).not.toHaveBeenCalled();
+            await expect(service.create(createOrderDto, mockBuyer as any)).rejects.toThrow(NotFoundException);
+            expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
         });
 
         it('should throw InternalServerErrorException on save error (error path)', async () => {
@@ -197,26 +217,28 @@ describe('OrdersService', () => {
                 id: 'product1',
                 name: 'Test Product',
                 price: 10.99,
+                stock: 10,
+                seller: { id: 'seller1' },
             };
 
             const createOrderDto = {
-                buyerId: 'buyer1',
                 items: [
                     {
                         productId: 'product1',
                         quantity: 2,
-                        price: 10.99,
                     },
                 ],
             };
 
-            mockUserRepository.findOne.mockResolvedValue(mockBuyer);
-            mockProductRepository.findOne.mockResolvedValue(mockProduct);
-            mockOrderRepository.create.mockReturnValue({ items: [] });
-            mockOrderItemRepository.create.mockReturnValue({});
-            mockOrderRepository.save.mockRejectedValue(new Error('Database error'));
+            // Configurar para que falle al guardar
+            mockQueryRunner.manager.findOne.mockResolvedValue(mockProduct);
+            mockQueryRunner.manager.create.mockReturnValue({});
+            mockQueryRunner.manager.save
+                .mockResolvedValueOnce(mockProduct) // Primera llamada: save del producto (reduce stock)
+                .mockRejectedValueOnce(new Error('Database error')); // Segunda llamada: save de la orden (falla)
 
-            await expect(service.create(createOrderDto)).rejects.toThrow(InternalServerErrorException);
+            await expect(service.create(createOrderDto, mockBuyer as any)).rejects.toThrow();
+            expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
         });
     });
 
@@ -236,23 +258,25 @@ describe('OrdersService', () => {
                 total: 21.98,
             };
 
+            const mockUser = { id: 'buyer1', role: 'user' };
+
             mockOrderRepository.findOne.mockResolvedValue(mockOrder);
 
-            const result = await service.findOne('order1');
+            const result = await service.findOne('order1', mockUser as any);
 
             expect(result).toEqual(mockOrder);
             expect(mockOrderRepository.findOne).toHaveBeenCalledWith({
                 where: { id: 'order1' },
-                relations: ['items', 'buyer'],
+                relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
             });
         });
 
-        it('should return null if order not found (error path)', async () => {
+        it('should throw NotFoundException if order not found (error path)', async () => {
+            const mockUser = { id: 'user1', role: 'user' };
+
             mockOrderRepository.findOne.mockResolvedValue(null);
 
-            const result = await service.findOne('nonexistent');
-
-            expect(result).toBeNull();
+            await expect(service.findOne('nonexistent', mockUser as any)).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -282,7 +306,8 @@ describe('OrdersService', () => {
             expect(result).toHaveLength(2);
             expect(result).toEqual(mockOrders);
             expect(mockOrderRepository.find).toHaveBeenCalledWith({
-                relations: ['items', 'buyer'],
+                relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
+                order: { createdAt: 'DESC' },
             });
         });
 
