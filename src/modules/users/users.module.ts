@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
+import { SellerController } from './seller.controller';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { PassportModule } from '@nestjs/passport';
     AuthModule
   ],
 
-  controllers: [UsersController],
+  controllers: [UsersController, SellerController],
   providers: [UsersService],
   exports: [UsersService],
 })

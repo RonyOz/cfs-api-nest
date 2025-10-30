@@ -135,4 +135,130 @@ export class UsersService {
     
     throw new InternalServerErrorException('Unexpected error, check server logs');
   }
+  async findAllSellers(paginationDto: PaginationDto) {
+    try {
+      const { limit = 10, offset = 0 } = paginationDto;
+
+      // Usamos query builder para traer usuario + count de productos
+      const qb = this.userRepository.createQueryBuilder('user')
+        .leftJoinAndSelect('user.products', 'product')
+        .loadRelationCountAndMap('user.productsCount', 'user.products')
+        .where('product.id IS NOT NULL') // solo usuarios con productos
+        .take(limit)
+        .skip(offset)
+        .orderBy('user.username', 'ASC');
+
+      const sellers = await qb.getMany();
+
+      return sellers.map(u => {
+        const { password, ...rest } = u as any;
+        return {
+          ...rest,
+          products: (u as any).products?.map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            stock: p.stock
+          })) ?? [],
+          productsCount: (u as any).productsCount ?? 0,
+        };
+      });
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Perfil público de un vendedor:
+   * - Datos públicos del usuario (sin password, sin email si quieres privacidad)
+   * - Productos (lista resumida)
+   * - Historial de ventas: orders que incluyen productos del seller, con totales por orderItem
+   *
+   * Nota: se retorna información pública solamente.
+   */
+  async findSellerProfile(id: string) {
+    // Validación básica
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid UUID');
+    }
+
+    // 1) Buscar usuario
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['products'],
+    });
+
+    if (!user) return null;
+
+    try {
+      // 2) Historial de ventas: orders que contienen productos de este seller.
+      // Necesitamos acceder a Order / OrderItem; usamos QueryBuilder genérico.
+
+      const salesQb = this.userRepository.manager.createQueryBuilder()
+        .select([
+          'o.id AS orderId',
+          'o.status AS orderStatus',
+          'o.createdAt AS orderCreatedAt',
+          'oi.id AS orderItemId',
+          'oi.quantity AS quantity',
+          'oi.price AS itemPrice',
+          'p.id AS productId',
+          'p.name AS productName'
+        ])
+        .from('orders', 'o')
+        .innerJoin('order_items', 'oi', 'oi.orderId = o.id')
+        .innerJoin('products', 'p', 'p.id = oi.productId')
+        .where('p.sellerId = :sellerId', { sellerId: id })
+        .orderBy('o.createdAt', 'DESC');
+
+      const rawSales = await salesQb.execute();
+
+      // Mapear rawSales a estructura agrupada por order
+      const salesMap = new Map<string, any>();
+      for (const row of rawSales) {
+        const orderId = row.orderid;
+        if (!salesMap.has(orderId)) {
+          salesMap.set(orderId, {
+            id: orderId,
+            status: row.orderstatus,
+            createdAt: row.ordercreatedat,
+            items: []
+          });
+        }
+        salesMap.get(orderId).items.push({
+          orderItemId: row.orderitemid,
+          productId: row.productid,
+          productName: row.productname,
+          quantity: Number(row.quantity),
+          itemPrice: Number(row.itemprice),
+        });
+      }
+
+      const sales = Array.from(salesMap.values());
+
+      // Respuesta pública (omitimos password)
+      const { password, email, twoFactorSecret, ...publicUser } = user as any;
+
+      return {
+        seller: {
+          id: publicUser.id,
+          username: publicUser.username,
+          // si quieres exponer email, quítalo de aquí
+          // email: publicUser.email,
+          twoFactorEnabled: publicUser.twoFactorEnabled,
+        },
+        products: (user.products ?? []).map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          stock: p.stock,
+        })),
+        salesHistory: sales,
+      };
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
 }
