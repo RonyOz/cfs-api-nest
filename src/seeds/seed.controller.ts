@@ -10,7 +10,7 @@ export class SeedController {
   constructor(private readonly seedService: SeedService) { }
 
   @Post('run')
-  @Auth(ValidRoles.admin)
+  @Auth()
   @ApiOperation({ summary: 'Run database seed (creates admin and example products)' })
   async run() {
     return this.seedService.run();
