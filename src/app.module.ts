@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { TypeormConfig } from './config/typeorm.config';
+import { SeedModule } from './seeds/seed.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { TypeormConfig } from './config/typeorm.config';
     UsersModule,
     ProductsModule,
     OrdersModule,
+    SeedModule,
   ],
   controllers: [],
   providers: [],
