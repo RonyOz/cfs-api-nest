@@ -7,6 +7,7 @@ import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import {OrderStatus,UpdateOrderStatusDto} from './dto/update-order-status.dto';
+import { ValidRoles } from '../auth/enums/roles.enum';
 
 @Injectable()
 export class OrdersService {
@@ -225,7 +226,7 @@ export class OrdersService {
       }
 
       // Solo el buyer puede cancelar su propia orden
-      if (order.buyer.id !== user.id) {
+      if (order.buyer.id !== user.id && user.role !== ValidRoles.admin) {
         throw new ForbiddenException('You can only cancel your own orders');
       }
 

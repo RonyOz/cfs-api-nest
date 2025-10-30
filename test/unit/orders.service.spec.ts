@@ -38,6 +38,7 @@ describe('OrdersService', () => {
 
     beforeEach(async () => {
         // Crear mockQueryRunner DENTRO del beforeEach para que se reinicie
+        
         mockQueryRunner = {
             connect: jest.fn(),
             startTransaction: jest.fn(),
@@ -208,6 +209,7 @@ describe('OrdersService', () => {
         });
 
         it('should throw InternalServerErrorException on save error (error path)', async () => {
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
             const mockBuyer = {
                 id: 'buyer1',
                 email: 'buyer@example.com',
@@ -239,7 +241,11 @@ describe('OrdersService', () => {
 
             await expect(service.create(createOrderDto, mockBuyer as any)).rejects.toThrow();
             expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
+            
+            consoleErrorSpy.mockRestore();
         });
+        
+
     });
 
     describe('findOne', () => {

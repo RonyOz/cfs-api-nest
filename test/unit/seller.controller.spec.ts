@@ -3,44 +3,75 @@ import { SellerController } from '../../src/modules/users/seller.controller';
 import { UsersService } from '../../src/modules/users/users.service';
 import { NotFoundException } from '@nestjs/common';
 
-const mockUsersService = {
-  findAllSellers: jest.fn(),
-  findSellerProfile: jest.fn(),
-};
-
 describe('SellerController', () => {
   let controller: SellerController;
-  let usersService: typeof mockUsersService;
+  let service: UsersService;
+
+  const mockUsersService = {
+    findAllSellers: jest.fn(),
+    findSellerProfile: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SellerController],
       providers: [
-        { provide: UsersService, useValue: mockUsersService },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
+        },
       ],
     }).compile();
 
     controller = module.get<SellerController>(SellerController);
-    usersService = module.get(UsersService);
+    service = module.get<UsersService>(UsersService);
+
     jest.clearAllMocks();
   });
 
-  it('should return sellers list', async () => {
-    const result = [{ id: 1 }];
-    usersService.findAllSellers.mockResolvedValue(result);
-    expect(await controller.findAll({} as any)).toBe(result);
-    expect(usersService.findAllSellers).toHaveBeenCalled();
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
   });
 
-  it('should return seller profile', async () => {
-    const profile = { id: 'abc' };
-    usersService.findSellerProfile.mockResolvedValue(profile);
-    expect(await controller.findOne('abc')).toBe(profile);
-    expect(usersService.findSellerProfile).toHaveBeenCalledWith('abc');
+  describe('findAll', () => {
+    it('should return list of sellers', async () => {
+      const mockSellers = [
+        {
+          id: 'seller-1',
+          username: 'seller1',
+          productsCount: 5,
+        },
+      ];
+
+      mockUsersService.findAllSellers.mockResolvedValue(mockSellers);
+
+      const result = await controller.findAll({ limit: 10, offset: 0 });
+
+      expect(result).toEqual(mockSellers);
+      expect(service.findAllSellers).toHaveBeenCalledWith({ limit: 10, offset: 0 });
+    });
   });
 
-  it('should throw NotFoundException if seller not found', async () => {
-    usersService.findSellerProfile.mockResolvedValue(null);
-    await expect(controller.findOne('notfound')).rejects.toThrow(NotFoundException);
+  describe('findOne', () => {
+    it('should return seller profile', async () => {
+      const mockProfile = {
+        seller: { id: 'seller-1', username: 'seller1' },
+        products: [],
+        salesHistory: [],
+      };
+
+      mockUsersService.findSellerProfile.mockResolvedValue(mockProfile);
+
+      const result = await controller.findOne('seller-1');
+
+      expect(result).toEqual(mockProfile);
+      expect(service.findSellerProfile).toHaveBeenCalledWith('seller-1');
+    });
+
+    it('should throw NotFoundException when seller not found', async () => {
+      mockUsersService.findSellerProfile.mockResolvedValue(null);
+
+      await expect(controller.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+    });
   });
 });

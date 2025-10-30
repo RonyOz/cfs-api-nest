@@ -3,7 +3,7 @@ import { OrdersController } from '../../src/modules/orders/orders.controller';
 import { OrdersService } from '../../src/modules/orders/orders.service';
 import { CreateOrderDto } from '../../src/modules/orders/dto/create-order.dto';
 import { UpdateOrderStatusDto, OrderStatus } from '../../src/modules/orders/dto/update-order-status.dto';
-
+import { PassportModule } from '@nestjs/passport';
 describe('OrdersController', () => {
     let controller: OrdersController;
     let service: OrdersService;
