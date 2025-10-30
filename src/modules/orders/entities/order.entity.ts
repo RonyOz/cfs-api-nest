@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
 import { OrderItem } from './order-item.entity';
 
@@ -12,9 +13,18 @@ import { OrderItem } from './order-item.entity';
  */
 @Entity('orders')
 export class Order {
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Order unique identifier',
+  })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiProperty({
+    example: 'pending',
+    description: 'Order status',
+    enum: ['pending', 'accepted', 'delivered', 'canceled'],
+  })
   @Column({
     type: 'varchar',
     length: 50,
@@ -22,6 +32,10 @@ export class Order {
   })
   status: string; // pending, accepted, delivered, canceled
 
+  @ApiProperty({
+    example: 1999.99,
+    description: 'Total amount of the order',
+  })
   @Column({
     type: 'decimal',
     precision: 10,
@@ -33,6 +47,10 @@ export class Order {
    * Relación ManyToOne con User (buyer)
    * Un usuario puede tener muchas órdenes como comprador
    */
+  @ApiProperty({
+    description: 'Buyer information',
+    type: () => User,
+  })
   @ManyToOne(() => User, (user) => user.orders, {
     eager: false,
     onDelete: 'CASCADE',
@@ -45,18 +63,30 @@ export class Order {
    * cascade: true -> Al guardar/eliminar orden, se guardan/eliminan items
    * eager: true -> Los items se cargan automáticamente con la orden
    */
+  @ApiProperty({
+    description: 'List of items in the order',
+    type: () => [OrderItem],
+  })
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
     cascade: true,
     eager: true,
   })
   items: OrderItem[];
 
+  @ApiProperty({
+    example: '2024-01-15T10:30:00.000Z',
+    description: 'Order creation timestamp',
+  })
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
+  @ApiProperty({
+    example: '2024-01-15T10:30:00.000Z',
+    description: 'Order last update timestamp',
+  })
   @UpdateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',

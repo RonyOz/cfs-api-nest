@@ -51,6 +51,10 @@ export class Product {
 // @OneToMany('OrderItem', 'product')
 // orderItems: OrderItem[];
 
+  @ApiProperty({
+    description: 'Order items that include this product',
+    type: () => [OrderItem],
+  })
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems: OrderItem[];
 }
