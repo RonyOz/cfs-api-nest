@@ -60,6 +60,7 @@ export class OrderItem {
    */
   @ManyToOne(() => Product, (product) => product.orderItems, {
     eager: true, // Cargar automáticamente el producto con el item
+    onDelete: 'RESTRICT', // No permitir eliminar productos con órdenes
   })
   product: Product;
 }

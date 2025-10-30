@@ -35,6 +35,7 @@ export class Order {
    */
   @ManyToOne(() => User, (user) => user.orders, {
     eager: false,
+    onDelete: 'CASCADE',
   })
   buyer: User;
 
