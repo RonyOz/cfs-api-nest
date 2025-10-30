@@ -22,7 +22,7 @@ export class OrdersController {
    * - Reduce stock de productos
    */
   @Post()
-  @Auth('user') // Solo usuarios autenticados (no admin necesario)
+  @Auth() 
   @ApiOperation({
     summary: 'Create a new order',
     description:
@@ -120,7 +120,7 @@ export class OrdersController {
    * - Valida transiciones de estado válidas
    */
   @Put(':id/status')
-  @Auth('user') // Usuario o admin
+  @Auth() // Usuario o admin
   @ApiOperation({
     summary: 'Update order status',
     description:
@@ -163,7 +163,7 @@ export class OrdersController {
    * - Restaura el stock de productos
    */
   @Delete(':id')
-  @Auth('user') // Usuario autenticado
+  @Auth() // Usuario autenticado
   @ApiOperation({
     summary: 'Cancel order',
     description:

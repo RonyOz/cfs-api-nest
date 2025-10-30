@@ -135,6 +135,7 @@ export class UsersService {
     
     throw new InternalServerErrorException('Unexpected error, check server logs');
   }
+  
   async findAllSellers(paginationDto: PaginationDto) {
     try {
       const { limit = 10, offset = 0 } = paginationDto;
