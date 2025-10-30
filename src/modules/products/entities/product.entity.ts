@@ -45,12 +45,16 @@ export class Product {
     description: 'Product seller information',
     type: () => User,
   })
-  @ManyToOne('User', 'products', { eager: false })
+  @ManyToOne('User', 'products', { eager: false, onDelete: 'CASCADE' })
   seller: User;
 
 // @OneToMany('OrderItem', 'product')
 // orderItems: OrderItem[];
 
+  @ApiProperty({
+    description: 'Order items that include this product',
+    type: () => [OrderItem],
+  })
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems: OrderItem[];
 }

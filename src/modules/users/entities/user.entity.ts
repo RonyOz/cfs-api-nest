@@ -42,19 +42,33 @@ export class User {
   })
   role: string;
 
+  @ApiProperty({
+    example: 'JBSWY3DPEHPK3PXP',
+    description: '2FA secret key (base32 encoded)',
+    required: false,
+  })
   @Column({ type: 'varchar', nullable: true, default: null })
   twoFactorSecret: string | null;
 
+  @ApiProperty({
+    example: false,
+    description: 'Whether 2FA is enabled for this user',
+  })
   @Column({ type: 'boolean', default: false })
   twoFactorEnabled: boolean;
 
   // Relations
+  @ApiProperty({
+    description: 'Products sold by this user',
+    type: () => [Product],
+  })
   @OneToMany('Product', 'seller')
   products: Product[];
 
-  // @OneToMany('Order', 'buyer')
-  // orders: Order[];
-
+  @ApiProperty({
+    description: 'Orders made by this user',
+    type: () => [Order],
+  })
   @OneToMany(() => Order, (order) => order.buyer)
   orders: Order[];
 }

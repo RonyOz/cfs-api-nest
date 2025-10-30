@@ -205,7 +205,7 @@ Para ver detalles completos sobre cuerpos de solicitud y respuestas, consulta la
 
 | Método | Endpoint       | Descripción                                | Acceso  |
 | :----- | :------------- | :----------------------------------------- | :------ |
-| `GET`  | `/seller`      | Lista todos los usuarios con rol `seller`. | Público |
+| `GET`  | `/seller`      | Lista todos los usuarios con rol que tenga productos. | Público |
 | `GET`  | `/seller/{id}` | Obtiene el perfil público de un vendedor.  | Público |
 
 ---

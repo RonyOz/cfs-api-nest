@@ -21,7 +21,7 @@ export class SellerController {
   @ApiResponse({ status: 200, description: 'Seller profile retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Seller not found' })
   async findOne(@Param('id') id: string) {
-    const profile = await this.usersService.findSellerProfile(id);
+    const profile = await this.usersService.findSellerProfile(id.trim());
     if (!profile) throw new NotFoundException(`Seller with id ${id} not found`);
     return profile;
   }

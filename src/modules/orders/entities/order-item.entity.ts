@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
 } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { Order } from './order.entity';
 import { Product } from '../../products/entities/product.entity';
 
@@ -21,9 +22,17 @@ import { Product } from '../../products/entities/product.entity';
  */
 @Entity('order_items')
 export class OrderItem {
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Order item unique identifier',
+  })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiProperty({
+    example: 2,
+    description: 'Quantity of the product in the order',
+  })
   @Column({
     type: 'int',
   })
@@ -34,6 +43,10 @@ export class OrderItem {
    * Se almacena para mantener histórico correcto
    * (el precio actual del producto puede cambiar)
    */
+  @ApiProperty({
+    example: 999.99,
+    description: 'Price of the product at the time of purchase',
+  })
   @Column({
     type: 'decimal',
     precision: 10,
@@ -46,6 +59,10 @@ export class OrderItem {
    * Muchos items pertenecen a una orden
    * onDelete: 'CASCADE' -> Si se elimina la orden, se eliminan sus items
    */
+  @ApiProperty({
+    description: 'Order that this item belongs to',
+    type: () => Order,
+  })
   @ManyToOne(() => Order, (order) => order.items, {
     onDelete: 'CASCADE',
   })
@@ -58,8 +75,13 @@ export class OrderItem {
    * - Obtener información del seller
    * - Mostrar detalles del producto en la orden
    */
+  @ApiProperty({
+    description: 'Product being ordered',
+    type: () => Product,
+  })
   @ManyToOne(() => Product, (product) => product.orderItems, {
     eager: true, // Cargar automáticamente el producto con el item
+    onDelete: 'RESTRICT', // No permitir eliminar productos con órdenes
   })
   product: Product;
 }
