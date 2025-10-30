@@ -9,6 +9,7 @@ import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 
+
 /**
  * Módulo de Orders
  * Maneja todo lo relacionado con órdenes de compra:

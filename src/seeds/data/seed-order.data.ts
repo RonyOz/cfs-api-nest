@@ -32,7 +32,7 @@ export const seedOrders = [
         ],
     },
     {
-        buyerEmail: 'emily@example.com',
+        buyerEmail: 'bob@example.com',
         items: [
             { productName: 'Tropical Smoothie', quantity: 1 },
             { productName: 'Vegan Salad Bowl', quantity: 2 },

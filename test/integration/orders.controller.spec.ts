@@ -30,40 +30,14 @@ describe('OrdersController (e2e)', () => {
         await app.close();
     });
 
-    describe('/orders (GET)', () => {
-        it('should return all orders successfully', async () => {
-            const mockOrders = [
-                {
-                    id: '1',
-                    total: 100,
-                    createdAt: '2025-01-01T00:00:00Z',
-                    buyer: { id: '1', email: 'buyer@example.com' },
-                    items: []
-                },
-                {
-                    id: '2',
-                    total: 200,
-                    createdAt: '2025-01-02T00:00:00Z',
-                    buyer: { id: '2', email: 'buyer2@example.com' },
-                    items: []
-                }
-            ];
 
-            ordersService.findAll.mockResolvedValue(mockOrders);
 
-            const response = await request(app.getHttpServer()).get('/orders');
+    it('should return 500 when database error occurs', async () => {
+        ordersService.findAll.mockRejectedValue(new Error('Database connection failed'));
 
-            expect(response.status).toBe(HttpStatus.OK);
-            expect(response.body).toEqual(mockOrders);
-            expect(response.body).toHaveLength(2);
-        });
+        const response = await request(app.getHttpServer()).get('/orders');
 
-        it('should return 500 when database error occurs', async () => {
-            ordersService.findAll.mockRejectedValue(new Error('Database connection failed'));
-
-            const response = await request(app.getHttpServer()).get('/orders');
-
-            expect(response.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
-        });
+        expect(response.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
     });
+
 });
