@@ -4,6 +4,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // allow all origins
+  app.enableCors({ origin: true, methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', allowedHeaders: '*', credentials: true });
+
   app.setGlobalPrefix('api/v1', {
     exclude: ['api-docs'],
   });
