@@ -4,7 +4,7 @@ import { UsersService } from './users.service';
 import { UserModel } from './models/user.model';
 import { CreateUserInput } from './inputs/create-user.input';
 import { UpdateUserInput } from './inputs/update-user.input';
-import { PaginationInput } from './inputs/pagination.input';
+import { PaginationInput } from '../../common/inputs/pagination.input';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { GqlRolesGuard } from '../auth/guards/gql-roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';

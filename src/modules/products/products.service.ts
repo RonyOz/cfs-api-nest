@@ -19,7 +19,7 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-  ) {}
+  ) { }
 
   async findAll(paginationDto: PaginationDto) {
     try {
@@ -45,6 +45,20 @@ export class ProductsService {
     }
 
     return product;
+  }
+
+  async findByUser(userId: string, paginationDto: PaginationDto) {
+    try {
+      const { limit, offset } = paginationDto;
+      return await this.productRepository.find({
+        where: { seller: { id: userId } },
+        take: limit,
+        skip: offset,
+        relations: ['seller'],
+      });
+    } catch (error) {
+      this.handleException(error);
+    }
   }
 
   async create(createProductDto: CreateProductDto, user: User) {

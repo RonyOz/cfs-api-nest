@@ -270,3 +270,156 @@ query GetSellersPaginated {
 
 # Paso 4: Consultar perfil
 # query { user(term: "test@test.com") { id username email } }
+
+# =====================================
+# 5. PRODUCTOS (Schema First)
+# =====================================
+
+# --- Obtener todos los productos (Público) ---
+query GetAllProducts {
+  products(pagination: {
+    limit: 10
+    offset: 0
+  }) {
+    id
+    name
+    description
+    price
+    stock
+    seller {
+      id
+      username
+      email
+    }
+  }
+}
+
+# --- Obtener producto por ID (Público) ---
+query GetProductById {
+  product(term: "uuid-del-producto") {
+    id
+    name
+    description
+    price
+    stock
+    seller {
+      username
+      email
+    }
+  }
+}
+
+# --- Obtener producto por nombre (Público) ---
+query GetProductByName {
+  product(term: "iPhone 15 Pro") {
+    id
+    name
+    description
+    price
+    stock
+    seller {
+      username
+    }
+  }
+}
+
+# --- Obtener mis productos (Requiere autenticación) ---
+query GetMyProducts {
+  myProducts(pagination: {
+    limit: 5
+    offset: 0
+  }) {
+    id
+    name
+    description
+    price
+    stock
+  }
+}
+
+# --- Crear producto (Requiere autenticación) ---
+mutation CreateProduct {
+  createProduct(input: {
+    name: "MacBook Pro 16"
+    description: "Laptop potente con M3 Max chip"
+    price: 2499.99
+    stock: 15
+  }) {
+    id
+    name
+    description
+    price
+    stock
+    seller {
+      id
+      username
+      email
+    }
+  }
+}
+
+# --- Actualizar producto (Requiere autenticación - Solo dueño o admin) ---
+mutation UpdateProduct {
+  updateProduct(
+    id: "uuid-del-producto"
+    input: {
+      price: 2299.99
+      stock: 10
+    }
+  ) {
+    id
+    name
+    price
+    stock
+    seller {
+      username
+    }
+  }
+}
+
+# --- Actualizar producto de otro usuario (Solo admin) ---
+mutation AdminUpdateProduct {
+  updateProduct(
+    id: "uuid-del-producto-de-otro-usuario"
+    input: {
+      name: "MacBook Pro 16 - Refurbished"
+      price: 1999.99
+      stock: 5
+    }
+  ) {
+    id
+    name
+    description
+    price
+    stock
+    seller {
+      username
+      email
+    }
+  }
+}
+
+# --- Eliminar producto (Requiere autenticación - Solo dueño o admin) ---
+mutation DeleteProduct {
+  deleteProduct(id: "uuid-del-producto")
+}
+
+# =====================================
+# FLUJO COMPLETO PRODUCTOS
+# =====================================
+
+# 1. Login
+# mutation { login(input: { email: "user@example.com", password: "password" }) { token } }
+
+# 2. Crear producto
+# mutation { createProduct(input: { name: "iPhone 15", description: "Nuevo", price: 999, stock: 50 }) { id name } }
+
+# 3. Ver mis productos
+# query { myProducts { id name price stock } }
+
+# 4. Actualizar mi producto
+# mutation { updateProduct(id: "uuid", input: { price: 899 }) { id price } }
+
+# 5. Eliminar mi producto
+# mutation { deleteProduct(id: "uuid") }
+

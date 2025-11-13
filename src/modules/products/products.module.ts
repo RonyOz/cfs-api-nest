@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
+import { ProductsResolver } from './products.resolver';
 import { Product } from './entities/product.entity';
 import { AuthModule } from '../auth/auth.module';
 
@@ -14,7 +15,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [ProductsController],
-  providers: [ProductsService],
+  providers: [ProductsService, ProductsResolver],
   exports: [ProductsService],
 })
 export class ProductsModule { }

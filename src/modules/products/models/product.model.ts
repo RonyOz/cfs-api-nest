@@ -1,4 +1,5 @@
 import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
+import { UserModel } from '../../users/models/user.model';
 
 @ObjectType('Product')
 export class ProductModel {
@@ -16,4 +17,7 @@ export class ProductModel {
 
     @Field(() => Int)
     stock: number;
+
+    @Field(() => UserModel)
+    seller: UserModel;
 }
