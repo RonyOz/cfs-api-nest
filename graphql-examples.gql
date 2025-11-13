@@ -1,0 +1,272 @@
+# ========================================
+# EJEMPLOS RÁPIDOS - GraphQL API
+# Copia y pega en GraphQL Playground
+# ========================================
+
+# =====================================
+# 1. AUTENTICACIÓN
+# =====================================
+
+# --- Registro de nuevo usuario ---
+mutation Signup {
+  signup(input: {
+    email: "demo@example.com"
+    username: "demouser"
+    password: "demo123456"
+  }) {
+    message
+    token
+  }
+}
+
+# --- Login ---
+mutation Login {
+  login(input: {
+    email: "demo@example.com"
+    password: "demo123456"
+  }) {
+    message
+    token
+  }
+}
+
+# --- Login con 2FA ---
+mutation LoginWith2FA {
+  login(input: {
+    email: "demo@example.com"
+    password: "demo123456"
+    token: "123456"
+  }) {
+    message
+    token
+  }
+}
+
+# --- Habilitar 2FA (requiere autenticación) ---
+mutation Enable2FA {
+  enable2FA {
+    secret
+    qrCode
+  }
+}
+
+# --- Verificar y activar 2FA ---
+mutation Verify2FA {
+  verify2FA(input: {
+    token: "123456"
+  }) {
+    message
+  }
+}
+
+# --- Deshabilitar 2FA ---
+mutation Disable2FA {
+  disable2FA(input: {
+    token: "123456"
+  }) {
+    message
+  }
+}
+
+# =====================================
+# 2. CONSULTAS DE USUARIOS
+# =====================================
+
+# --- Obtener todos los usuarios (Admin) ---
+query GetAllUsers {
+  users(pagination: {
+    limit: 10
+    offset: 0
+  }) {
+    id
+    email
+    username
+    role
+    twoFactorEnabled
+  }
+}
+
+# --- Buscar usuario por email ---
+query GetUserByEmail {
+  user(term: "demo@example.com") {
+    id
+    email
+    username
+    role
+    twoFactorEnabled
+  }
+}
+
+# --- Buscar usuario por ID ---
+query GetUserById {
+  user(term: "uuid-aqui") {
+    id
+    email
+    username
+    role
+    twoFactorEnabled
+  }
+}
+
+# --- Obtener vendedores ---
+query GetSellers {
+  sellers(pagination: {
+    limit: 5
+    offset: 0
+  }) {
+    id
+    username
+    email
+    role
+    twoFactorEnabled
+    products {
+      id
+      name
+      price
+      stock
+    }
+    productsCount
+  }
+}
+
+# --- Perfil público de vendedor ---
+query GetSellerProfile {
+  sellerProfile(id: "uuid-del-vendedor") {
+    seller {
+      id
+      username
+      twoFactorEnabled
+    }
+    products {
+      id
+      name
+      description
+      price
+      stock
+    }
+    salesHistory {
+      id
+      status
+      createdAt
+      items {
+        orderItemId
+        productId
+        productName
+        quantity
+        itemPrice
+      }
+    }
+  }
+}
+
+# =====================================
+# 3. MUTACIONES DE USUARIOS (Admin)
+# =====================================
+
+# --- Crear usuario ---
+mutation CreateUser {
+  createUser(input: {
+    email: "newuser@example.com"
+    username: "newuser"
+    password: "password123"
+    role: "user"
+  }) {
+    id
+    email
+    username
+    role
+    twoFactorEnabled
+  }
+}
+
+# --- Actualizar usuario ---
+mutation UpdateUser {
+  updateUser(
+    id: "uuid-del-usuario"
+    input: {
+      username: "updatedusername"
+      email: "updated@example.com"
+    }
+  ) {
+    id
+    email
+    username
+    role
+  }
+}
+
+# --- Eliminar usuario ---
+mutation DeleteUser {
+  removeUser(id: "uuid-del-usuario")
+}
+
+# =====================================
+# 4. CONSULTAS AVANZADAS
+# =====================================
+
+# --- Usuario con todos los detalles ---
+query GetUserComplete {
+  user(term: "demo@example.com") {
+    id
+    email
+    username
+    role
+    twoFactorEnabled
+    products {
+      id
+      name
+      description
+      price
+      stock
+    }
+  }
+}
+
+# --- Listado completo de vendedores paginado ---
+query GetSellersPaginated {
+  sellers(pagination: {
+    limit: 20
+    offset: 0
+  }) {
+    id
+    username
+    email
+    products {
+      id
+      name
+      price
+    }
+    productsCount
+  }
+}
+
+# =====================================
+# HEADERS PARA REQUESTS AUTENTICADOS
+# =====================================
+
+# Agrega esto en "HTTP HEADERS" del Playground:
+# {
+#   "Authorization": "Bearer TU_TOKEN_JWT_AQUI"
+# }
+
+# =====================================
+# EJEMPLOS DE FLUJO COMPLETO
+# =====================================
+
+# 1. Registrarse
+# 2. Copiar el token
+# 3. Agregar token a HTTP Headers
+# 4. Hacer consultas autenticadas
+
+# Ejemplo paso a paso:
+
+# Paso 1: Signup
+# mutation { signup(input: { email: "test@test.com", username: "test", password: "test123" }) { token } }
+
+# Paso 2: Copiar token de la respuesta
+
+# Paso 3: Agregar header
+# { "Authorization": "Bearer eyJhbGc..." }
+
+# Paso 4: Consultar perfil
+# query { user(term: "test@test.com") { id username email } }

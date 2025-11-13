@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { AuthResolver } from './auth.resolver';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from '../users/entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -25,8 +26,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }
     }),
   ],
-  providers: [AuthService, JwtStrategy, ConfigService],
+  providers: [AuthService, AuthResolver, JwtStrategy, ConfigService],
   controllers: [AuthController],
-  exports: [AuthService, JwtStrategy,  PassportModule, JwtModule],
+  exports: [AuthService, JwtStrategy, PassportModule, JwtModule],
 })
 export class AuthModule { }

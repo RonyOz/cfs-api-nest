@@ -6,12 +6,11 @@
 ![TypeORM](https://img.shields.io/badge/TypeORM-ORM-orange)
 ![Coverage >80%](https://img.shields.io/badge/Coverage-%3E80%25-success?logo=jest)
 ![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-green?logo=swagger)
+![GraphQL](https://img.shields.io/badge/GraphQL-API-E10098?logo=graphql)
 ![GitHub Actions](https://img.shields.io/badge/CI-CD_Automation-black?logo=github)
 
 > **Nota:**
-> Esta API fue desarrollada con **NestJS** y tiene como propósito facilitar la compra y venta de alimentos dentro de un campus universitario, gestionando usuarios, productos y pedidos con autenticación JWT, autorización por roles, persistencia con PostgreSQL y documentación Swagger.
-
----
+> Esta API fue desarrollada con **NestJS** y tiene como propósito facilitar la compra y venta de alimentos dentro de un campus universitario, gestionando usuarios, productos y pedidos con autenticación JWT, autorización por roles, persistencia con PostgreSQL, documentación Swagger y **ahora con soporte GraphQL**.
 
 ## Autores
 
@@ -77,6 +76,20 @@ Este repositorio incluye módulos para **auth**, **users**, **products** y **ord
 10. **CI/CD:** GitHub Actions ejecuta pruebas antes de cada push.
 
 ---
+
+## Nueva Funcionalidad: GraphQL API
+
+Este proyecto ahora soporta **GraphQL** además de la API REST tradicional. Puedes elegir la opción que mejor se adapte a tus necesidades:
+
+- **REST API**: `/api/v1/*` - Endpoints tradicionales
+- **GraphQL API**: `/graphql` - API GraphQL con playground interactivo
+
+**Documentación completa de GraphQL**: Ver [GRAPHQL.md](./GRAPHQL.md)  
+**Ejemplos de queries**: Ver [graphql-examples.gql](./graphql-examples.gql)
+
+### Acceso rápido:
+- **GraphQL Playground**: [http://localhost:3000/graphql](http://localhost:3000/graphql)
+- **REST Swagger**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
 
 ## Stack Tecnológico
 

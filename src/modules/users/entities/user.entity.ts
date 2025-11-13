@@ -16,9 +16,10 @@ export class User {
     example: 'john@example.com',
     description: 'User email address',
   })
-  @Column({ 
-    type: 'text', 
-    unique: true })
+  @Column({
+    type: 'text',
+    unique: true
+  })
   email: string;
 
   @ApiProperty({
@@ -36,7 +37,7 @@ export class User {
     description: 'User role',
     enum: ['user', 'admin'],
   })
-  @Column({ 
+  @Column({
     type: 'text',
     default: ['user']
   })
