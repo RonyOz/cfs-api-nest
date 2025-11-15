@@ -1,4 +1,4 @@
-import {Injectable,NotFoundException,BadRequestException,ForbiddenException,InternalServerErrorException,} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, InternalServerErrorException, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -6,7 +6,7 @@ import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
-import {OrderStatus,UpdateOrderStatusDto} from './dto/update-order-status.dto';
+import { OrderStatus, UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { ValidRoles } from '../auth/enums/roles.enum';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class OrdersService {
     @InjectRepository(User)
     public readonly userRepository: Repository<User>, // Agregar para tests
     private readonly dataSource: DataSource, // Para transacciones
-  ) {}
+  ) { }
 
   /**
    * Crear una nueva orden
@@ -123,6 +123,22 @@ export class OrdersService {
   async findAll(): Promise<Order[]> {
     try {
       return await this.orderRepository.find({
+        relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
+        order: { createdAt: 'DESC' },
+      });
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Obtener las órdenes del usuario autenticado
+   * Incluye información de items, productos y sellers
+   */
+  async findMyOrders(user: User): Promise<Order[]> {
+    try {
+      return await this.orderRepository.find({
+        where: { buyer: { id: user.id } },
         relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
         order: { createdAt: 'DESC' },
       });

@@ -1,5 +1,5 @@
-import {Controller,Get,Post,Body,Param,Delete,Put,ParseUUIDPipe,} from '@nestjs/common';
-import {ApiTags,ApiOperation,ApiResponse,ApiBearerAuth} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, Put, ParseUUIDPipe, } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -11,7 +11,7 @@ import { User } from '../users/entities/user.entity';
 @ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   /**
    * POST /api/v1/orders
@@ -22,7 +22,7 @@ export class OrdersController {
    * - Reduce stock de productos
    */
   @Post()
-  @Auth() 
+  @Auth()
   @ApiOperation({
     summary: 'Create a new order',
     description:
@@ -47,6 +47,31 @@ export class OrdersController {
   })
   create(@Body() createOrderDto: CreateOrderDto, @GetUser() user: User) {
     return this.ordersService.create(createOrderDto, user);
+  }
+
+  /**
+   * GET /api/v1/orders/my-orders
+   * Obtener mis órdenes (usuario autenticado)
+   * - Rol: Usuario autenticado
+   * - Incluye información de items, productos y sellers
+   */
+  @Get('my-orders')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get my orders',
+    description:
+      'Retrieves all orders created by the authenticated user with complete information including items, products, and sellers',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of user orders retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  findMyOrders(@GetUser() user: User) {
+    return this.ordersService.findMyOrders(user);
   }
 
   /**
@@ -193,5 +218,5 @@ export class OrdersController {
   cancel(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
     return this.ordersService.cancel(id, user);
   }
-  
+
 }
