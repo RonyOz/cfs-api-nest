@@ -6,7 +6,7 @@ import { SignupInput } from './inputs/signup.input';
 import { LoginInput } from './inputs/login.input';
 import { Verify2FAInput } from './inputs/verify-2fa.input';
 import { GqlAuthGuard } from './guards/gql-auth.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
+import { GetUser } from './decorators/get-user.decorator';
 import { User } from '../users/entities/user.entity';
 
 @Resolver()
@@ -36,7 +36,7 @@ export class AuthResolver {
     })
     @UseGuards(GqlAuthGuard)
     async enable2FA(
-        @CurrentUser() user: User,
+        @GetUser() user: User,
     ): Promise<TwoFactorSetupModel> {
         return this.authService.enable2FA(user);
     }
@@ -46,7 +46,7 @@ export class AuthResolver {
     })
     @UseGuards(GqlAuthGuard)
     async verify2FA(
-        @CurrentUser() user: User,
+        @GetUser() user: User,
         @Args('input') verify2FAInput: Verify2FAInput,
     ): Promise<MessageResponseModel> {
         return this.authService.verify2FA(user, verify2FAInput);
@@ -57,7 +57,7 @@ export class AuthResolver {
     })
     @UseGuards(GqlAuthGuard)
     async disable2FA(
-        @CurrentUser() user: User,
+        @GetUser() user: User,
         @Args('input') verify2FAInput: Verify2FAInput,
     ): Promise<MessageResponseModel> {
         return this.authService.disable2FA(user, verify2FAInput);
