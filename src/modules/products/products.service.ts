@@ -112,7 +112,7 @@ export class ProductsService {
   async remove(id: string, user: User) {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['seller'],
+      relations: ['seller'],// se coloca eso para que pueda validar la propiedad seller
     });
 
     if (!product) {

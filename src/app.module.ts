@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { TypeormConfig } from './config/typeorm.config';
 import { SeedModule } from './seeds/seed.module';
 
@@ -26,6 +27,7 @@ import { SeedModule } from './seeds/seed.module';
     UsersModule,
     ProductsModule,
     OrdersModule,
+    StorageModule,
     SeedModule,
   ],
   controllers: [],
