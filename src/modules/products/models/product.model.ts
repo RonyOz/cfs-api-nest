@@ -18,6 +18,9 @@ export class ProductModel {
     @Field(() => Int)
     stock: number;
 
+    @Field({ nullable: true, description: 'Product image URL' })
+    imageUrl?: string;
+
     @Field(() => UserModel)
     seller: UserModel;
 }
