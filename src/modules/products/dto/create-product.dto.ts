@@ -39,4 +39,13 @@ export class CreateProductDto {
   @Type(() => Number)
   @IsOptional()
   stock?: number;
+
+  @ApiProperty({
+    example: 'https://xxx.supabase.co/storage/v1/object/public/product-images/products/1234567890-image.jpg',
+    description: 'Product image URL from Supabase Storage',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
 }

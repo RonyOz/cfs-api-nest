@@ -42,6 +42,14 @@ export class Product {
   stock: number;
 
   @ApiProperty({
+    example: 'https://xxx.supabase.co/storage/v1/object/public/product-images/products/1234567890-image.jpg',
+    description: 'Product image URL',
+    required: false,
+  })
+  @Column({ nullable: true })
+  imageUrl: string;
+
+  @ApiProperty({
     description: 'Product seller information',
     type: () => User,
   })
