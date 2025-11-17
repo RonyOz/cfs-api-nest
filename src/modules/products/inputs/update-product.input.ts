@@ -28,4 +28,9 @@ export class UpdateProductInput {
     @Type(() => Number)
     @IsOptional()
     stock?: number;
+
+    @Field({ nullable: true, description: 'Product image URL from Supabase Storage' })
+    @IsString()
+    @IsOptional()
+    imageUrl?: string;
 }
