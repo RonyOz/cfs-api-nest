@@ -1,5 +1,3 @@
-# Fragmentos reutilizables para Products
-
 fragment ProductFields on Product {
   id
   name
@@ -13,14 +11,12 @@ fragment ProductFields on Product {
   }
 }
 
-# Ejemplo de uso de fragment en una Query
 query GetAllProductsWithFragment {
   products(pagination: { limit: 10, offset: 0 }) {
     ...ProductFields
   }
 }
 
-# Ejemplo de uso de fragment en una Mutation (respuesta)
 mutation CreateProductWithFragment {
   createProduct(input: {
     name: "MacBook Pro 16"
