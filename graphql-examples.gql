@@ -129,24 +129,37 @@ query GetSellers {
   }
 }
 
-# --- Perfil público de vendedor ---
+# --- Perfil público de vendedor (COMPLETO) ---
 query GetSellerProfile {
   sellerProfile(id: "uuid-del-vendedor") {
-    seller {
-      id
-      username
-      twoFactorEnabled
-    }
+    # Información del vendedor
+    id
+    username
+    email
+    phoneNumber
+    role
+    twoFactorEnabled
+    
+    # Estadísticas
+    productsCount
+    totalOrders
+    ordersThisMonth
+    
+    # Productos del vendedor
     products {
       id
       name
       description
       price
       stock
+      imageUrl
     }
+    
+    # Historial de ventas
     salesHistory {
       id
       status
+      total
       createdAt
       items {
         orderItemId

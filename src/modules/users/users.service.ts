@@ -189,11 +189,13 @@ export class UsersService {
 
   /**
    * Perfil público de un vendedor:
-   * - Datos públicos del usuario (sin password)
+   * - Datos públicos del usuario (incluyendo phoneNumber)
    * - Productos con información completa
    * - Conteo de productos
+   * - Estadísticas de órdenes (total y del mes actual)
+   * - Historial de ventas (salesHistory) con detalles de cada orden
    *
-   * Nota: se retorna información pública solamente compatible con UserModel.
+   * Nota: Información pública completa para mostrar en perfil de vendedor.
    */
   async findSellerProfile(id: string) {
     // Validación básica
@@ -210,13 +212,93 @@ export class UsersService {
     if (!user) return null;
 
     try {
-      // Respuesta pública (omitimos password y twoFactorSecret)
+      // Calcular estadísticas de órdenes
+      // Contamos las órdenes donde este vendedor tiene productos
+      const ordersQuery = this.userRepository.manager
+        .createQueryBuilder()
+        .select('DISTINCT o.id')
+        .from('orders', 'o')
+        .innerJoin('order_items', 'oi', 'oi."orderId" = o.id')
+        .innerJoin('products', 'p', 'p.id = oi."productId"')
+        .where('p."sellerId" = :sellerId', { sellerId: id });
+
+      const totalOrdersResult = await ordersQuery.getRawMany();
+      const totalOrders = totalOrdersResult.length;
+
+      // Órdenes del mes actual
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const ordersThisMonthQuery = this.userRepository.manager
+        .createQueryBuilder()
+        .select('DISTINCT o.id')
+        .from('orders', 'o')
+        .innerJoin('order_items', 'oi', 'oi."orderId" = o.id')
+        .innerJoin('products', 'p', 'p.id = oi."productId"')
+        .where('p."sellerId" = :sellerId', { sellerId: id })
+        .andWhere('o.createdAt >= :startOfMonth', { startOfMonth });
+
+      const ordersThisMonthResult = await ordersThisMonthQuery.getRawMany();
+      const ordersThisMonth = ordersThisMonthResult.length;
+
+      // Obtener historial de ventas con detalles
+      // Usando las relaciones de TypeORM en lugar de raw SQL
+      const productIds = (user.products ?? []).map((p) => p.id);
+
+      let salesHistory: any[] = [];
+
+      if (productIds.length > 0) {
+        const salesHistoryQuery = await this.userRepository.manager
+          .createQueryBuilder()
+          .select('o.id', 'orderId')
+          .addSelect('o.status', 'orderStatus')
+          .addSelect('o.total', 'orderTotal')
+          .addSelect('o.createdAt', 'orderCreatedAt')
+          .addSelect('oi.id', 'orderItemId')
+          .addSelect('oi.quantity', 'itemQuantity')
+          .addSelect('oi.price', 'itemPrice')
+          .addSelect('p.id', 'productId')
+          .addSelect('p.name', 'productName')
+          .from('orders', 'o')
+          .innerJoin('order_items', 'oi', 'oi."orderId" = o.id')
+          .innerJoin('products', 'p', 'p.id = oi."productId"')
+          .where('p.id IN (:...productIds)', { productIds })
+          .orderBy('o.createdAt', 'DESC')
+          .getRawMany();
+
+        // Agrupar items por orden
+        const ordersMap = new Map();
+        salesHistoryQuery.forEach((row) => {
+          if (!ordersMap.has(row.orderId)) {
+            ordersMap.set(row.orderId, {
+              id: row.orderId,
+              status: row.orderStatus,
+              total: Number(row.orderTotal),
+              createdAt: row.orderCreatedAt,
+              items: [],
+            });
+          }
+          ordersMap.get(row.orderId).items.push({
+            orderItemId: row.orderItemId,
+            productId: row.productId,
+            productName: row.productName,
+            quantity: Number(row.itemQuantity),
+            itemPrice: Number(row.itemPrice),
+          });
+        });
+
+        salesHistory = Array.from(ordersMap.values());
+      }
+
+      // Respuesta pública (omitimos solo password y twoFactorSecret)
       const { password, twoFactorSecret, ...publicUser } = user as any;
 
       return {
         id: publicUser.id,
         username: publicUser.username,
         email: publicUser.email,
+        phoneNumber: publicUser.phoneNumber,
         role: publicUser.role,
         twoFactorEnabled: publicUser.twoFactorEnabled,
         products: (user.products ?? []).map((p) => ({
@@ -228,6 +310,9 @@ export class UsersService {
           imageUrl: p.imageUrl,
         })),
         productsCount: user.products?.length ?? 0,
+        totalOrders,
+        ordersThisMonth,
+        salesHistory, // ✨ Historial completo de ventas
       };
     } catch (error) {
       this.handleException(error);
@@ -248,6 +333,6 @@ export class UsersService {
 
     return safeUser;
   }
-}
+}
 
 
