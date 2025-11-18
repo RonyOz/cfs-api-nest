@@ -132,6 +132,36 @@ export class OrdersService {
   }
 
   /**
+   * Obtener todas las órdenes con paginación (solo admin)
+   */
+  async findAllPaginated(page: number = 1, limit: number = 10) {
+    try {
+      const [data, total] = await this.orderRepository.findAndCount({
+        relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
    * Obtener las órdenes del usuario autenticado
    * Incluye información de items, productos y sellers
    */
@@ -148,12 +178,42 @@ export class OrdersService {
   }
 
   /**
+   * Obtener las órdenes del usuario autenticado con paginación
+   */
+  async findMyOrdersPaginated(user: User, page: number = 1, limit: number = 10) {
+    try {
+      const [data, total] = await this.orderRepository.findAndCount({
+        where: { buyer: { id: user.id } },
+        relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
    * Obtener las órdenes donde el usuario autenticado es vendedor
    * Retorna órdenes que contienen productos del usuario
    */
   async findMySales(user: User): Promise<Order[]> {
     try {
-      // Buscar órdenes que contienen productos del vendedor
       const orders = await this.orderRepository
         .createQueryBuilder('order')
         .leftJoinAndSelect('order.buyer', 'buyer')
@@ -165,6 +225,41 @@ export class OrdersService {
         .getMany();
 
       return orders;
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Obtener las órdenes donde el usuario autenticado es vendedor con paginación
+   */
+  async findMySalesPaginated(user: User, page: number = 1, limit: number = 10) {
+    try {
+      const [data, total] = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.buyer', 'buyer')
+        .leftJoinAndSelect('order.items', 'items')
+        .leftJoinAndSelect('items.product', 'product')
+        .leftJoinAndSelect('product.seller', 'seller')
+        .where('seller.id = :sellerId', { sellerId: user.id })
+        .orderBy('order.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
     } catch (error) {
       this.handleException(error);
     }

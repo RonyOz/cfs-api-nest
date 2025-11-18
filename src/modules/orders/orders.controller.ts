@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, ParseUUIDPipe, } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, Put, ParseUUIDPipe, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -58,20 +59,35 @@ export class OrdersController {
   @Get('my-orders')
   @Auth()
   @ApiOperation({
-    summary: 'Get my orders as buyer',
+    summary: 'Get my orders as buyer with pagination',
     description:
-      'Retrieves all orders created by the authenticated user as buyer with complete information including items, products, and sellers',
+      'Retrieves all orders created by the authenticated user as buyer with pagination support',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+    example: 10,
   })
   @ApiResponse({
     status: 200,
-    description: 'List of user orders retrieved successfully',
+    description: 'Paginated list of user orders retrieved successfully',
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  findMyOrders(@GetUser() user: User) {
-    return this.ordersService.findMyOrders(user);
+  findMyOrders(@GetUser() user: User, @Query() paginationQuery: PaginationQueryDto) {
+    const { page, limit } = paginationQuery;
+    return this.ordersService.findMyOrdersPaginated(user, page, limit);
   }
 
   /**
@@ -83,20 +99,35 @@ export class OrdersController {
   @Get('my-sales')
   @Auth()
   @ApiOperation({
-    summary: 'Get my sales as seller',
+    summary: 'Get my sales as seller with pagination',
     description:
-      'Retrieves all orders where the authenticated user is the seller of products. Allows sellers to manage orders containing their products.',
+      'Retrieves all orders where the authenticated user is the seller of products with pagination support.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+    example: 10,
   })
   @ApiResponse({
     status: 200,
-    description: 'List of seller orders retrieved successfully',
+    description: 'Paginated list of seller orders retrieved successfully',
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  findMySales(@GetUser() user: User) {
-    return this.ordersService.findMySales(user);
+  findMySales(@GetUser() user: User, @Query() paginationQuery: PaginationQueryDto) {
+    const { page, limit } = paginationQuery;
+    return this.ordersService.findMySalesPaginated(user, page, limit);
   }
 
   /**
@@ -108,13 +139,27 @@ export class OrdersController {
   @Get()
   @Auth('admin') // Solo admin puede ver todas las órdenes
   @ApiOperation({
-    summary: 'Get all orders (Admin only)',
+    summary: 'Get all orders with pagination (Admin only)',
     description:
-      'Retrieves all orders in the system with complete information including buyers, sellers, items, and products',
+      'Retrieves all orders in the system with pagination. Supports page and limit query parameters.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+    example: 10,
   })
   @ApiResponse({
     status: 200,
-    description: 'List of all orders retrieved successfully',
+    description: 'Paginated list of orders retrieved successfully',
   })
   @ApiResponse({
     status: 401,
@@ -124,8 +169,9 @@ export class OrdersController {
     status: 403,
     description: 'Forbidden - Admin access required',
   })
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    const { page, limit } = paginationQuery;
+    return this.ordersService.findAllPaginated(page, limit);
   }
 
   /**
