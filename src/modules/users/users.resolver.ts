@@ -92,8 +92,9 @@ export class UsersResolver {
     @Roles('admin')
     async removeUser(
         @Args('id') id: string,
+        @GetUser() authUser: User,
     ): Promise<boolean> {
-        await this.usersService.remove(id);
+        await this.usersService.remove(id, authUser);
         return true;
     }
 }

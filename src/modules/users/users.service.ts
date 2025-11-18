@@ -19,7 +19,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async findAll(paginationDto: PaginationDto) {
     try {
@@ -123,11 +123,16 @@ export class UsersService {
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUser?: User) {
     const user = await this.userRepository.findOne({ where: { id } });
-    
+
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    // Validar que el usuario no intente eliminarse a sí mismo
+    if (currentUser && currentUser.id === id) {
+      throw new BadRequestException('You cannot delete your own account');
     }
 
     try {
@@ -146,14 +151,14 @@ export class UsersService {
     if (error.code === '23505') {
       throw new BadRequestException(error.detail);
     }
-    
+
     if (error instanceof BadRequestException || error instanceof NotFoundException) {
       throw error;
     }
-    
+
     throw new InternalServerErrorException('Unexpected error, check server logs');
   }
-  
+
   async findAllSellers(paginationDto: PaginationDto) {
     try {
       const { limit = 10, offset = 0 } = paginationDto;
