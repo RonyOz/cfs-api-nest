@@ -55,4 +55,32 @@ export const seedProducts = [
         stock: 12,
         sellerEmail: 'bob@example.com',
     },
+    {
+        name: 'Club Sandwich',
+        description: 'Triple-decker sandwich with turkey, bacon, lettuce and tomato',
+        price: 9.25,
+        stock: 15,
+        sellerEmail: 'carla@example.com',
+    },
+    {
+        name: 'Caesar Salad',
+        description: 'Fresh romaine lettuce with Caesar dressing, croutons and parmesan',
+        price: 6.75,
+        stock: 18,
+        sellerEmail: 'dave@example.com',
+    },
+    {
+        name: 'Fruit Parfait',
+        description: 'Layers of yogurt, granola and fresh seasonal fruits',
+        price: 5.0,
+        stock: 20,
+        sellerEmail: 'emily@example.com',
+    },
+    {
+        name: 'Vegetarian Burger',
+        description: 'Plant-based patty with lettuce, tomato, onion and special sauce',
+        price: 8.5,
+        stock: 10,
+        sellerEmail: 'carla@example.com',
+    },
 ];
