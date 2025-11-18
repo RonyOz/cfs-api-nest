@@ -41,4 +41,16 @@ export class CreateOrderDto {
   @IsString({ message: 'Meeting place must be a string' })
   @MaxLength(255, { message: 'Meeting place must not exceed 255 characters' })
   meetingPlace?: string;
+
+  @ApiProperty({
+    description: 'Método de pago para la orden',
+    example: 'Efectivo',
+    enum: ['Efectivo', 'Nequi', 'Daviplata', 'Transferencia bancaria', 'Otro'],
+    required: false,
+    default: 'Efectivo',
+  })
+  @IsOptional()
+  @IsString({ message: 'Payment method must be a string' })
+  @MaxLength(100, { message: 'Payment method must not exceed 100 characters' })
+  paymentMethod?: string;
 }

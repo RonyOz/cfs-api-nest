@@ -31,7 +31,7 @@ export class OrdersService {
    * - Crea la orden y los items en una transacción
    */
   async create(createOrderDto: CreateOrderDto, buyer: User): Promise<Order> {
-    const { items, meetingPlace } = createOrderDto;
+    const { items, meetingPlace, paymentMethod } = createOrderDto;
 
     // Validación básica
     if (!items || items.length === 0) {
@@ -96,6 +96,7 @@ export class OrdersService {
         status: OrderStatus.PENDING,
         total: totalAmount,
         meetingPlace: meetingPlace || 'No especificado',
+        paymentMethod: paymentMethod || 'Efectivo',
         buyer: buyer,
         items: orderItems,
       });
