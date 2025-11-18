@@ -100,7 +100,7 @@ export class SeedService {
 
       if (skip) continue;
 
-      await this.ordersService.create({ items }, buyer);
+      await this.ordersService.create({ items, meetingPlace: o.meetingPlace || 'No especificado' }, buyer);
       this.logger.log(`Created order for ${o.buyerEmail}`);
     }
   }

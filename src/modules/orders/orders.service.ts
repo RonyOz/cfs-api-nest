@@ -31,7 +31,7 @@ export class OrdersService {
    * - Crea la orden y los items en una transacción
    */
   async create(createOrderDto: CreateOrderDto, buyer: User): Promise<Order> {
-    const { items } = createOrderDto;
+    const { items, meetingPlace } = createOrderDto;
 
     // Validación básica
     if (!items || items.length === 0) {
@@ -95,6 +95,7 @@ export class OrdersService {
       const order = queryRunner.manager.create(Order, {
         status: OrderStatus.PENDING,
         total: totalAmount,
+        meetingPlace: meetingPlace || 'No especificado',
         buyer: buyer,
         items: orderItems,
       });

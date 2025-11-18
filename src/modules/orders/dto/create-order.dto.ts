@@ -1,4 +1,4 @@
-import { IsArray, ArrayMinSize, ValidateNested } from 'class-validator';
+import { IsArray, ArrayMinSize, ValidateNested, IsString, IsOptional, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { CreateOrderItemDto } from './create-order-item.dto';
@@ -29,4 +29,16 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
   items: CreateOrderItemDto[];
+
+  @ApiProperty({
+    description: 'Lugar de encuentro donde el comprador recibirá el producto',
+    example: 'Edificio E, Segundo piso',
+    maxLength: 255,
+    required: false,
+    default: 'No especificado',
+  })
+  @IsOptional()
+  @IsString({ message: 'Meeting place must be a string' })
+  @MaxLength(255, { message: 'Meeting place must not exceed 255 characters' })
+  meetingPlace?: string;
 }

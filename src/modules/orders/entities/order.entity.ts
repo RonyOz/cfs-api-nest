@@ -43,6 +43,18 @@ export class Order {
   })
   total: number;
 
+  @ApiProperty({
+    example: 'Edificio E, Segundo piso',
+    description: 'Meeting place where the buyer will receive the product',
+    default: 'No especificado',
+  })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    default: 'No especificado',
+  })
+  meetingPlace: string;
+
   /**
    * Relación ManyToOne con User (buyer)
    * Un usuario puede tener muchas órdenes como comprador
