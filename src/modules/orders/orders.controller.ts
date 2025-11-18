@@ -51,16 +51,16 @@ export class OrdersController {
 
   /**
    * GET /api/v1/orders/my-orders
-   * Obtener mis órdenes (usuario autenticado)
+   * Obtener mis órdenes como comprador (usuario autenticado)
    * - Rol: Usuario autenticado
    * - Incluye información de items, productos y sellers
    */
   @Get('my-orders')
   @Auth()
   @ApiOperation({
-    summary: 'Get my orders',
+    summary: 'Get my orders as buyer',
     description:
-      'Retrieves all orders created by the authenticated user with complete information including items, products, and sellers',
+      'Retrieves all orders created by the authenticated user as buyer with complete information including items, products, and sellers',
   })
   @ApiResponse({
     status: 200,
@@ -72,6 +72,31 @@ export class OrdersController {
   })
   findMyOrders(@GetUser() user: User) {
     return this.ordersService.findMyOrders(user);
+  }
+
+  /**
+   * GET /api/v1/orders/my-sales
+   * Obtener órdenes donde mis productos fueron comprados (usuario autenticado como vendedor)
+   * - Rol: Usuario autenticado
+   * - Incluye información de buyers, items y productos
+   */
+  @Get('my-sales')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get my sales as seller',
+    description:
+      'Retrieves all orders where the authenticated user is the seller of products. Allows sellers to manage orders containing their products.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of seller orders retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  findMySales(@GetUser() user: User) {
+    return this.ordersService.findMySales(user);
   }
 
   /**

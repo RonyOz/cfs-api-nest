@@ -148,6 +148,29 @@ export class OrdersService {
   }
 
   /**
+   * Obtener las órdenes donde el usuario autenticado es vendedor
+   * Retorna órdenes que contienen productos del usuario
+   */
+  async findMySales(user: User): Promise<Order[]> {
+    try {
+      // Buscar órdenes que contienen productos del vendedor
+      const orders = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.buyer', 'buyer')
+        .leftJoinAndSelect('order.items', 'items')
+        .leftJoinAndSelect('items.product', 'product')
+        .leftJoinAndSelect('product.seller', 'seller')
+        .where('seller.id = :sellerId', { sellerId: user.id })
+        .orderBy('order.createdAt', 'DESC')
+        .getMany();
+
+      return orders;
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
    * Obtener una orden específica
    * Validaciones:
    * - Buyer puede ver sus propias órdenes
