@@ -327,12 +327,14 @@ export class UsersService {
     const { password, twoFactorSecret, ...rest } = user as any;
     const safeUser: any = { ...rest };
 
-    if (!viewer || viewer.id !== user.id) {
+    if (!viewer || (viewer.id !== user.id && viewer.role !== 'admin')) {
       delete safeUser.phoneNumber;
     }
+
 
     return safeUser;
   }
 }
+
 
 
