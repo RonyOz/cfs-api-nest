@@ -21,6 +21,11 @@ export class UpdateUserInput {
     @IsOptional()
     password?: string;
 
+    @Field({ nullable: true })
+    @IsString()
+    @IsOptional()
+    phoneNumber?: string;
+
     @Field(() => ValidRoles, { nullable: true })
     @IsEnum(ValidRoles)
     @IsOptional()

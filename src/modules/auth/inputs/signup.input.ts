@@ -16,4 +16,8 @@ export class SignupInput {
     @IsString()
     @MinLength(6)
     password: string;
+
+    @Field()
+    @IsString()
+    phoneNumber: string;
 }

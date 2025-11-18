@@ -29,11 +29,7 @@ export class UsersService {
         skip: offset,
       });
 
-      // Remove password from response
-      return users.map(user => {
-        const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword;
-      });
+      return users.map((user) => this.toSafeUser(user));
     } catch (error) {
       this.handleException(error);
     }
@@ -63,15 +59,13 @@ export class UsersService {
 
       await this.userRepository.save(user);
 
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      return this.toSafeUser(user);
     } catch (error) {
       this.handleException(error);
     }
   }
 
-  async findOne(term: string) {
+  async findOne(term: string, viewer?: User) {
     const where: FindOptionsWhere<User> | FindOptionsWhere<User>[] = isUUID(term)
       ? { id: term }
       : [{ email: term }, { username: term }];
@@ -86,21 +80,21 @@ export class UsersService {
       throw new NotFoundException(`User with ${identifier} not found`);
     }
 
-    const { password, products, orders, ...safeUser } = user;
+    const safeUser = this.toSafeUser(user, viewer);
     return {
       ...safeUser,
-      products: products ?? [],
-      orders: orders ?? [],
+      products: user.products ?? [],
+      orders: user.orders ?? [],
     };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto, viewer?: User) {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
 
     try {
-      const { password, username, email, role } = updateUserDto;
+      const { password, username, email, role, phoneNumber } = updateUserDto;
 
       if (username !== undefined) {
         user.username = username;
@@ -114,12 +108,16 @@ export class UsersService {
         user.role = role;
       }
 
+      if (phoneNumber !== undefined) {
+        user.phoneNumber = phoneNumber;
+      }
+
       if (password) {
         user.password = await bcrypt.hash(password, 10);
       }
 
       await this.userRepository.save(user);
-      return this.findOne(id);
+      return this.findOne(id, viewer);
     } catch (error) {
       this.handleException(error);
     }
@@ -171,15 +169,15 @@ export class UsersService {
 
       const sellers = await qb.getMany();
 
-      return sellers.map(u => {
-        const { password, ...rest } = u as any;
+      return sellers.map((u) => {
+        const safeUser = this.toSafeUser(u as User);
         return {
-          ...rest,
-          products: (u as any).products?.map(p => ({
+          ...safeUser,
+          products: (u as any).products?.map((p) => ({
             id: p.id,
             name: p.name,
             price: p.price,
-            stock: p.stock
+            stock: p.stock,
           })) ?? [],
           productsCount: (u as any).productsCount ?? 0,
         };
@@ -221,7 +219,7 @@ export class UsersService {
         email: publicUser.email,
         role: publicUser.role,
         twoFactorEnabled: publicUser.twoFactorEnabled,
-        products: (user.products ?? []).map(p => ({
+        products: (user.products ?? []).map((p) => ({
           id: p.id,
           name: p.name,
           description: p.description,
@@ -236,4 +234,20 @@ export class UsersService {
     }
   }
 
-}
+  private toSafeUser(user: User, viewer?: User) {
+    if (!user) {
+      return null;
+    }
+
+    const { password, twoFactorSecret, ...rest } = user as any;
+    const safeUser: any = { ...rest };
+
+    if (!viewer || viewer.id !== user.id) {
+      delete safeUser.phoneNumber;
+    }
+
+    return safeUser;
+  }
+}
+
+

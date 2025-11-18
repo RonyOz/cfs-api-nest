@@ -13,6 +13,9 @@ export class UserModel {
     @Field()
     username: string;
 
+    @Field({ nullable: true })
+    phoneNumber?: string;
+
     @Field(() => ValidRoles)
     role: ValidRoles;
 

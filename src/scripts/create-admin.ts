@@ -22,6 +22,7 @@ async function bootstrap() {
     username: 'Admin',
     email,
     password: 'admin123',
+    phoneNumber: '+10000000000',
     role: ValidRoles.admin,
   });
 

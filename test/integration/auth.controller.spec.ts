@@ -72,7 +72,7 @@ describe('AuthController (e2e)', () => {
                     email: 'newuser@example.com',
                     password: 'password123',
                     username: 'newuser',
-                    fullName: 'New User'
+                    phoneNumber: '+1234567890'
                 });
 
             expect(response.status).toBe(HttpStatus.CREATED);
@@ -91,7 +91,7 @@ describe('AuthController (e2e)', () => {
                     email: 'existing@example.com',
                     password: 'password123',
                     username: 'existing',
-                    fullName: 'Existing User'
+                    phoneNumber: '+1234567890'
                 });
 
             expect(response.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);

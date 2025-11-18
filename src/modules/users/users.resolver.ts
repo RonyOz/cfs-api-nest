@@ -8,6 +8,8 @@ import { PaginationInput } from '../../common/inputs/pagination.input';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { GqlRolesGuard } from '../auth/guards/gql-roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { User } from './entities/user.entity';
 
 @Resolver(() => UserModel)
 export class UsersResolver {
@@ -33,8 +35,9 @@ export class UsersResolver {
     @UseGuards(GqlAuthGuard)
     async findOne(
         @Args('term') term: string,
+        @GetUser() authUser: User,
     ): Promise<any> {
-        return this.usersService.findOne(term) as any;
+        return this.usersService.findOne(term, authUser) as any;
     }
 
     @Query(() => [UserModel], {

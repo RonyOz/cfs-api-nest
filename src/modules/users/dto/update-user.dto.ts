@@ -19,6 +19,10 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   password?: string;
 
   @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
   @IsEnum(ValidRoles)
   role?: ValidRoles;
 }

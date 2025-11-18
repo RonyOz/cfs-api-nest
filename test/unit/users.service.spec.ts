@@ -67,7 +67,9 @@ describe('UsersService', () => {
 
             expect(result).toHaveLength(2);
             expect(result[0]).not.toHaveProperty('password');
+            expect(result[0]).not.toHaveProperty('phoneNumber');
             expect(result[1]).not.toHaveProperty('password');
+            expect(result[1]).not.toHaveProperty('phoneNumber');
             expect(mockUserRepository.find).toHaveBeenCalledWith({
                 take: 10,
                 skip: 0,
@@ -87,7 +89,7 @@ describe('UsersService', () => {
                 email: 'newuser@example.com',
                 username: 'newuser',
                 password: 'password123',
-                fullName: 'New User',
+                phoneNumber: '+1234567890',
             };
 
             mockUserRepository.findOne.mockResolvedValue(null);
@@ -100,7 +102,7 @@ describe('UsersService', () => {
                 id: '123',
                 email: createUserDto.email,
                 username: createUserDto.username,
-                fullName: createUserDto.fullName,
+                phoneNumber: createUserDto.phoneNumber,
                 password: 'hashedpassword',
                 role: 'user',
             });
@@ -109,6 +111,7 @@ describe('UsersService', () => {
 
             expect(result).not.toHaveProperty('password');
             expect(result.email).toBe(createUserDto.email);
+            expect(result).not.toHaveProperty('phoneNumber');
             expect(mockUserRepository.findOne).toHaveBeenCalledWith({
                 where: { email: createUserDto.email },
             });
@@ -120,7 +123,7 @@ describe('UsersService', () => {
                 email: 'existing@example.com',
                 username: 'existing',
                 password: 'password123',
-                fullName: 'Existing User',
+                phoneNumber: '+1234567890',
             };
 
             mockUserRepository.findOne.mockResolvedValue({
@@ -180,41 +183,41 @@ describe('UsersService', () => {
     describe('update', () => {
         it('should update user successfully (happy path)', async () => {
             const updateUserDto = {
-                fullName: 'Updated Name',
+                username: 'updated-name',
             };
 
             const mockUser = {
                 id: '123',
                 email: 'test@example.com',
                 username: 'testuser',
-                fullName: 'Old Name',
+                username: 'Old Name',
                 password: 'hashedpassword',
                 role: 'user',
             };
 
             mockUserRepository.preload.mockResolvedValue({
                 ...mockUser,
-                fullName: updateUserDto.fullName,
+                username: updateUserDto.username,
             });
             mockUserRepository.save.mockResolvedValue({
                 ...mockUser,
-                fullName: updateUserDto.fullName,
+                username: updateUserDto.username,
             });
             mockUserRepository.findOne.mockResolvedValue({
                 ...mockUser,
-                fullName: updateUserDto.fullName,
+                username: updateUserDto.username,
             });
 
             const result = await service.update('123', updateUserDto);
 
             expect(result).not.toHaveProperty('password');
-            expect(result.fullName).toBe(updateUserDto.fullName);
+            expect(result.username).toBe(updateUserDto.username);
             expect(mockUserRepository.save).toHaveBeenCalled();
         });
 
         it('should throw NotFoundException if user not found (error path)', async () => {
             const updateUserDto = {
-                fullName: 'Updated Name',
+                username: 'updated-name',
             };
 
             mockUserRepository.preload.mockResolvedValue(null);

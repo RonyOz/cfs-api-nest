@@ -18,6 +18,10 @@ export class CreateUserInput {
     @MinLength(6)
     password: string;
 
+    @Field()
+    @IsString()
+    phoneNumber: string;
+
     @Field(() => ValidRoles, { nullable: true })
     @IsEnum(ValidRoles)
     @IsOptional()

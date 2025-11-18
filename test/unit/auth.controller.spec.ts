@@ -99,6 +99,7 @@ describe('AuthController', () => {
                 username: 'newuser',
                 email: 'new@test.com',
                 password: 'password123',
+                phoneNumber: '+1234567890',
             };
             const expectedResult = { message: 'Signup successful', token: 'jwt-token' };
 
@@ -115,6 +116,7 @@ describe('AuthController', () => {
                 username: 'existinguser',
                 email: 'existing@test.com',
                 password: 'password123',
+                phoneNumber: '+1234567890',
             };
 
             authService.signup.mockRejectedValue(

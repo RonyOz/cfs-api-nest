@@ -122,10 +122,11 @@ export class OrdersService {
    */
   async findAll(): Promise<Order[]> {
     try {
-      return await this.orderRepository.find({
+      const orders = await this.orderRepository.find({
         relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
         order: { createdAt: 'DESC' },
       });
+      return this.prepareOrdersForViewer(orders);
     } catch (error) {
       this.handleException(error);
     }
@@ -146,7 +147,7 @@ export class OrdersService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data,
+        data: this.prepareOrdersForViewer(data),
         meta: {
           page,
           limit,
@@ -167,11 +168,12 @@ export class OrdersService {
    */
   async findMyOrders(user: User): Promise<Order[]> {
     try {
-      return await this.orderRepository.find({
+      const orders = await this.orderRepository.find({
         where: { buyer: { id: user.id } },
         relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
         order: { createdAt: 'DESC' },
       });
+      return this.prepareOrdersForViewer(orders, user);
     } catch (error) {
       this.handleException(error);
     }
@@ -193,7 +195,7 @@ export class OrdersService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data,
+        data: this.prepareOrdersForViewer(data, user),
         meta: {
           page,
           limit,
@@ -224,7 +226,7 @@ export class OrdersService {
         .orderBy('order.createdAt', 'DESC')
         .getMany();
 
-      return orders;
+      return this.prepareOrdersForViewer(orders, user);
     } catch (error) {
       this.handleException(error);
     }
@@ -250,7 +252,7 @@ export class OrdersService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data,
+        data: this.prepareOrdersForViewer(data, user),
         meta: {
           page,
           limit,
@@ -290,7 +292,7 @@ export class OrdersService {
         );
       }
 
-      return order;
+      return this.prepareOrderForViewer(order, user);
     } catch (error) {
       this.handleException(error);
     }
@@ -431,6 +433,32 @@ export class OrdersService {
    */
   private isUserSellerOfOrder(order: Order, user: User): boolean {
     return order.items.some((item) => item.product.seller.id === user.id);
+  }
+
+  private prepareOrdersForViewer(orders: Order[], user?: User): Order[] {
+    return orders.map((order) => this.prepareOrderForViewer(order, user));
+  }
+
+  private prepareOrderForViewer(order: Order, user?: User): Order {
+    if (!order || !order.buyer) {
+      return order;
+    }
+
+    const buyer = { ...order.buyer } as any;
+    delete buyer.password;
+    delete buyer.twoFactorSecret;
+
+    const canSeePhone =
+      !!user &&
+      (buyer.id === user.id ||
+        this.isUserSellerOfOrder(order, user));
+
+    if (!canSeePhone) {
+      buyer.phoneNumber = undefined;
+    }
+
+    order.buyer = buyer;
+    return order;
   }
 
   /**
