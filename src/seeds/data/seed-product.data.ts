@@ -83,4 +83,32 @@ export const seedProducts = [
         stock: 10,
         sellerEmail: 'carla@example.com',
     },
+    {
+        name: 'Iced Coffee',
+        description: 'Cold brew coffee with ice and milk',
+        price: 3.5,
+        stock: 40,
+        sellerEmail: 'frank@example.com',
+    },
+    {
+        name: 'Blueberry Muffin',
+        description: 'Fresh baked muffin with blueberries',
+        price: 3.0,
+        stock: 30,
+        sellerEmail: 'grace@example.com',
+    },
+    {
+        name: 'Tuna Sandwich',
+        description: 'Classic tuna salad sandwich on whole wheat',
+        price: 6.0,
+        stock: 15,
+        sellerEmail: 'henry@example.com',
+    },
+    {
+        name: 'Green Smoothie',
+        description: 'Spinach, banana, apple and almond milk blend',
+        price: 4.5,
+        stock: 25,
+        sellerEmail: 'iris@example.com',
+    },
 ];
