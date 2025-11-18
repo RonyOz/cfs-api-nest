@@ -171,11 +171,11 @@ export class UsersService {
 
   /**
    * Perfil público de un vendedor:
-   * - Datos públicos del usuario (sin password, sin email si quieres privacidad)
-   * - Productos (lista resumida)
-   * - Historial de ventas: orders que incluyen productos del seller, con totales por orderItem
+   * - Datos públicos del usuario (sin password)
+   * - Productos con información completa
+   * - Conteo de productos
    *
-   * Nota: se retorna información pública solamente.
+   * Nota: se retorna información pública solamente compatible con UserModel.
    */
   async findSellerProfile(id: string) {
     // Validación básica
@@ -183,7 +183,7 @@ export class UsersService {
       throw new BadRequestException('Invalid UUID');
     }
 
-    // 1) Buscar usuario
+    // Buscar usuario con sus productos
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['products'],
@@ -192,70 +192,24 @@ export class UsersService {
     if (!user) return null;
 
     try {
-      // 2) Historial de ventas: orders que contienen productos de este seller.
-      // Necesitamos acceder a Order / OrderItem; usamos QueryBuilder genérico.
-
-      const salesQb = this.userRepository.manager.createQueryBuilder()
-        .select([
-          'o.id AS orderId',
-          'o.status AS orderStatus',
-          'o.createdAt AS orderCreatedAt',
-          'oi.id AS orderItemId',
-          'oi.quantity AS quantity',
-          'oi.price AS itemPrice',
-          'p.id AS productId',
-          'p.name AS productName'
-        ])
-        .from('orders', 'o')
-        .innerJoin('order_items', 'oi', 'oi.orderId = o.id')
-        .innerJoin('products', 'p', 'p.id = oi.productId')
-        .where('p.sellerId = :sellerId', { sellerId: id })
-        .orderBy('o.createdAt', 'DESC');
-
-      const rawSales = await salesQb.execute();
-
-      // Mapear rawSales a estructura agrupada por order
-      const salesMap = new Map<string, any>();
-      for (const row of rawSales) {
-        const orderId = row.orderid;
-        if (!salesMap.has(orderId)) {
-          salesMap.set(orderId, {
-            id: orderId,
-            status: row.orderstatus,
-            createdAt: row.ordercreatedat,
-            items: []
-          });
-        }
-        salesMap.get(orderId).items.push({
-          orderItemId: row.orderitemid,
-          productId: row.productid,
-          productName: row.productname,
-          quantity: Number(row.quantity),
-          itemPrice: Number(row.itemprice),
-        });
-      }
-
-      const sales = Array.from(salesMap.values());
-
-      // Respuesta pública (omitimos password)
-      const { password, email, twoFactorSecret, ...publicUser } = user as any;
+      // Respuesta pública (omitimos password y twoFactorSecret)
+      const { password, twoFactorSecret, ...publicUser } = user as any;
 
       return {
-        seller: {
-          id: publicUser.id,
-          username: publicUser.username,
-          // si quieres exponer email, quítalo de aquí
-          // email: publicUser.email,
-          twoFactorEnabled: publicUser.twoFactorEnabled,
-        },
+        id: publicUser.id,
+        username: publicUser.username,
+        email: publicUser.email,
+        role: publicUser.role,
+        twoFactorEnabled: publicUser.twoFactorEnabled,
         products: (user.products ?? []).map(p => ({
           id: p.id,
           name: p.name,
           description: p.description,
           price: p.price,
           stock: p.stock,
+          imageUrl: p.imageUrl,
         })),
-        salesHistory: sales,
+        productsCount: user.products?.length ?? 0,
       };
     } catch (error) {
       this.handleException(error);
