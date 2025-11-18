@@ -81,7 +81,7 @@ export class OrderItem {
   })
   @ManyToOne(() => Product, (product) => product.orderItems, {
     eager: true, // Cargar automáticamente el producto con el item
-    onDelete: 'RESTRICT', // No permitir eliminar productos con órdenes
+    onDelete: 'CASCADE', // Al eliminar producto, eliminar order items (y sus órdenes)
   })
   product: Product;
 }
