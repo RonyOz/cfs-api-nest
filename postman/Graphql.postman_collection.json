@@ -1,0 +1,369 @@
+{
+    "info": {
+        "name": "CFS GraphQL Resolvers",
+        "_postman_id": "00000000-0000-0000-0000-000000000000",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "description": "Colección de resolvers GraphQL para Campus Food Sharing."
+    },
+    "variable": [
+        { "key": "graphqlUrl", "value": "http://localhost:3000/graphql", "type": "string" },
+        { "key": "token", "value": "", "type": "string" }
+    ],
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Signup",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const json = pm.response.json();",
+                                    "const t = json?.data?.signup?.token;",
+                                    "if (t) pm.collectionVariables.set('token', t);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation Signup($input: SignupInput!) {\n  signup(input: $input) {\n    message\n    token\n  }\n}",
+                                "variables": "{\"input\": {\"email\": \"usuario@example.com\", \"username\": \"usuario123\", \"password\": \"Password123!\"}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const json = pm.response.json();",
+                                    "const t = json?.data?.login?.token;",
+                                    "if (t) pm.collectionVariables.set('token', t);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation Login($input: LoginInput!) {\n  login(input: $input) {\n    message\n    token\n  }\n}",
+                                "variables": "{\"input\": {\"email\": \"usuario@example.com\", \"password\": \"Password123!\"}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Enable 2FA",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation Enable2FA {\n  enable2FA {\n    secret\n    qrCode\n  }\n}",
+                                "variables": ""
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Verify 2FA",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation Verify2FA($input: Verify2FAInput!) {\n  verify2FA(input: $input) {\n    message\n  }\n}",
+                                "variables": "{\"input\": {\"token\": \"123456\"}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Disable 2FA",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation Disable2FA($input: Verify2FAInput!) {\n  disable2FA(input: $input) {\n    message\n  }\n}",
+                                "variables": "{\"input\": {\"token\": \"123456\"}}"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Users",
+            "item": [
+                {
+                    "name": "Get All Users (admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetAllUsers($pagination: PaginationInput) {\n  users(pagination: $pagination) {\n    id\n    email\n    username\n    role\n    twoFactorEnabled\n  }\n}",
+                                "variables": "{\"pagination\": {\"limit\": 10, \"offset\": 0}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get User by term",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetUser($term: String!) {\n  user(term: $term) {\n    id\n    email\n    username\n    role\n    twoFactorEnabled\n    products {\n      id\n      name\n      price\n      stock\n    }\n  }\n}",
+                                "variables": "{\"term\": \"usuario@example.com\"}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Create User (admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation CreateUser($input: CreateUserInput!) {\n  createUser(input: $input) {\n    id\n    email\n    username\n    role\n    twoFactorEnabled\n  }\n}",
+                                "variables": "{\"input\": {\"email\": \"nuevo@example.com\", \"username\": \"nuevo_usuario\", \"password\": \"Password123!\", \"role\": \"user\"}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update User (admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation UpdateUser($id: String!, $input: UpdateUserInput!) {\n  updateUser(id: $id, input: $input) {\n    id\n    email\n    username\n    role\n  }\n}",
+                                "variables": "{\"id\": \"uuid-del-usuario\", \"input\": {\"username\": \"usuario_actualizado\", \"email\": \"actualizado@example.com\"}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Remove User (admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation RemoveUser($id: String!) {\n  removeUser(id: $id)\n}",
+                                "variables": "{\"id\": \"uuid-del-usuario\"}"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Products",
+            "item": [
+                {
+                    "name": "Get All Products (public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetAllProducts($pagination: PaginationInput) {\n  products(pagination: $pagination) {\n    id\n    name\n    description\n    price\n    stock\n    seller {\n      id\n      username\n      email\n    }\n  }\n}",
+                                "variables": "{\"pagination\": {\"limit\": 10, \"offset\": 0}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Product by ID",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetProductById($term: String!) {\n  product(term: $term) {\n    id\n    name\n    description\n    price\n    stock\n    seller {\n      username\n      email\n    }\n  }\n}",
+                                "variables": "{\"term\": \"550e8400-e29b-41d4-a716-446655440000\"}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Product by Name",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetProductByName($term: String!) {\n  product(term: $term) {\n    id\n    name\n    price\n    stock\n  }\n}",
+                                "variables": "{\"term\": \"iPhone 15 Pro\"}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "My Products (auth)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetMyProducts($pagination: PaginationInput) {\n  myProducts(pagination: $pagination) {\n    id\n    name\n    description\n    price\n    stock\n  }\n}",
+                                "variables": "{\"pagination\": {\"limit\": 5, \"offset\": 0}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Create Product (auth)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation CreateProduct($input: CreateProductInput!) {\n  createProduct(input: $input) {\n    id\n    name\n    description\n    price\n    stock\n    seller {\n      id\n      username\n      email\n    }\n  }\n}",
+                                "variables": "{\"input\": {\"name\": \"MacBook Pro 16\", \"description\": \"Laptop potente con M3 Max chip\", \"price\": 2499.99, \"stock\": 15}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update Product (owner/admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation UpdateProduct($id: String!, $input: UpdateProductInput!) {\n  updateProduct(id: $id, input: $input) {\n    id\n    name\n    price\n    stock\n    seller {\n      username\n    }\n  }\n}",
+                                "variables": "{\"id\": \"uuid-del-producto\", \"input\": {\"price\": 2299.99, \"stock\": 10}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Product (owner/admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer {{token}}" }
+                        ],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "mutation DeleteProduct($id: String!) {\n  deleteProduct(id: $id)\n}",
+                                "variables": "{\"id\": \"uuid-del-producto\"}"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sellers",
+            "item": [
+                {
+                    "name": "Sellers (public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetSellers($pagination: PaginationInput) {\n  sellers(pagination: $pagination) {\n    id\n    username\n    email\n    products {\n      id\n      name\n      price\n      stock\n    }\n    productsCount\n  }\n}",
+                                "variables": "{\"pagination\": {\"limit\": 10, \"offset\": 0}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Seller Profile (public)",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] },
+                        "body": {
+                            "mode": "graphql",
+                            "graphql": {
+                                "query": "query GetSellerProfile($id: String!) {\n  sellerProfile(id: $id) {\n    seller {\n      id\n      username\n      twoFactorEnabled\n    }\n    products {\n      id\n      name\n      description\n      price\n      stock\n    }\n    salesHistory {\n      id\n      status\n      createdAt\n      items {\n        orderItemId\n        productId\n        productName\n        quantity\n        itemPrice\n      }\n    }\n  }\n}",
+                                "variables": "{\"id\": \"uuid-del-vendedor\"}"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
