@@ -124,7 +124,11 @@ export class ProductsService {
       throw new ForbiddenException('You can only delete your own products');
     }
 
-    await this.productRepository.remove(product);
+    try {
+      await this.productRepository.remove(product);
+    } catch (error) {
+      this.handleException(error);
+    }
   }
 
   private handleException(error: any) {

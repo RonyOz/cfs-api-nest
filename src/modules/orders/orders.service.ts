@@ -31,7 +31,7 @@ export class OrdersService {
    * - Crea la orden y los items en una transacción
    */
   async create(createOrderDto: CreateOrderDto, buyer: User): Promise<Order> {
-    const { items } = createOrderDto;
+    const { items, meetingPlace, paymentMethod } = createOrderDto;
 
     // Validación básica
     if (!items || items.length === 0) {
@@ -95,6 +95,8 @@ export class OrdersService {
       const order = queryRunner.manager.create(Order, {
         status: OrderStatus.PENDING,
         total: totalAmount,
+        meetingPlace: meetingPlace || 'No especificado',
+        paymentMethod: paymentMethod || 'Efectivo',
         buyer: buyer,
         items: orderItems,
       });
@@ -122,10 +124,41 @@ export class OrdersService {
    */
   async findAll(): Promise<Order[]> {
     try {
-      return await this.orderRepository.find({
+      const orders = await this.orderRepository.find({
         relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
         order: { createdAt: 'DESC' },
       });
+      return this.prepareOrdersForViewer(orders);
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Obtener todas las órdenes con paginación (solo admin)
+   */
+  async findAllPaginated(page: number = 1, limit: number = 10) {
+    try {
+      const [data, total] = await this.orderRepository.findAndCount({
+        relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: this.prepareOrdersForViewer(data),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
     } catch (error) {
       this.handleException(error);
     }
@@ -137,11 +170,100 @@ export class OrdersService {
    */
   async findMyOrders(user: User): Promise<Order[]> {
     try {
-      return await this.orderRepository.find({
+      const orders = await this.orderRepository.find({
         where: { buyer: { id: user.id } },
         relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
         order: { createdAt: 'DESC' },
       });
+      return this.prepareOrdersForViewer(orders, user);
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Obtener las órdenes del usuario autenticado con paginación
+   */
+  async findMyOrdersPaginated(user: User, page: number = 1, limit: number = 10) {
+    try {
+      const [data, total] = await this.orderRepository.findAndCount({
+        where: { buyer: { id: user.id } },
+        relations: ['buyer', 'items', 'items.product', 'items.product.seller'],
+        order: { createdAt: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: this.prepareOrdersForViewer(data, user),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Obtener las órdenes donde el usuario autenticado es vendedor
+   * Retorna órdenes que contienen productos del usuario
+   */
+  async findMySales(user: User): Promise<Order[]> {
+    try {
+      const orders = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.buyer', 'buyer')
+        .leftJoinAndSelect('order.items', 'items')
+        .leftJoinAndSelect('items.product', 'product')
+        .leftJoinAndSelect('product.seller', 'seller')
+        .where('seller.id = :sellerId', { sellerId: user.id })
+        .orderBy('order.createdAt', 'DESC')
+        .getMany();
+
+      return this.prepareOrdersForViewer(orders, user);
+    } catch (error) {
+      this.handleException(error);
+    }
+  }
+
+  /**
+   * Obtener las órdenes donde el usuario autenticado es vendedor con paginación
+   */
+  async findMySalesPaginated(user: User, page: number = 1, limit: number = 10) {
+    try {
+      const [data, total] = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.buyer', 'buyer')
+        .leftJoinAndSelect('order.items', 'items')
+        .leftJoinAndSelect('items.product', 'product')
+        .leftJoinAndSelect('product.seller', 'seller')
+        .where('seller.id = :sellerId', { sellerId: user.id })
+        .orderBy('order.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: this.prepareOrdersForViewer(data, user),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
     } catch (error) {
       this.handleException(error);
     }
@@ -172,7 +294,7 @@ export class OrdersService {
         );
       }
 
-      return order;
+      return this.prepareOrderForViewer(order, user);
     } catch (error) {
       this.handleException(error);
     }
@@ -313,6 +435,32 @@ export class OrdersService {
    */
   private isUserSellerOfOrder(order: Order, user: User): boolean {
     return order.items.some((item) => item.product.seller.id === user.id);
+  }
+
+  private prepareOrdersForViewer(orders: Order[], user?: User): Order[] {
+    return orders.map((order) => this.prepareOrderForViewer(order, user));
+  }
+
+  private prepareOrderForViewer(order: Order, user?: User): Order {
+    if (!order || !order.buyer) {
+      return order;
+    }
+
+    const buyer = { ...order.buyer } as any;
+    delete buyer.password;
+    delete buyer.twoFactorSecret;
+
+    const canSeePhone =
+      !!user &&
+      (buyer.id === user.id ||
+        this.isUserSellerOfOrder(order, user));
+
+    if (!canSeePhone) {
+      buyer.phoneNumber = undefined;
+    }
+
+    order.buyer = buyer;
+    return order;
   }
 
   /**

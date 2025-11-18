@@ -58,7 +58,7 @@ describe('AuthService', () => {
                 email: 'test@example.com',
                 username: 'testuser',
                 password: 'password123',
-                fullName: 'Test User',
+                phoneNumber: '+1234567890',
             };
 
             mockUserRepository.findOne.mockResolvedValue(null);
@@ -90,7 +90,7 @@ describe('AuthService', () => {
                 email: 'existing@example.com',
                 username: 'existing',
                 password: 'password123',
-                fullName: 'Existing User',
+                phoneNumber: '+1234567890',
             };
 
             mockUserRepository.findOne.mockResolvedValue({ id: '123', email: signupDto.email });

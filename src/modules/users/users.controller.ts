@@ -5,13 +5,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { User } from './entities/user.entity';
 import { ValidRoles } from '../auth/enums/roles.enum';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get()
   @Auth(ValidRoles.admin)
@@ -43,8 +44,8 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User found', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  async findOne(@Param('id') id: string, @GetUser() authUser: User) {
+    return this.usersService.findOne(id, authUser);
   }
 
   @Put(':id')
@@ -55,8 +56,12 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @GetUser() authUser: User,
+  ) {
+    return this.usersService.update(id, updateUserDto, authUser);
   }
 
   @Delete(':id')
@@ -64,11 +69,12 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user (admin only)' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request - Cannot delete your own account' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async remove(@Param('id') id: string) {
-    await this.usersService.remove(id);
+  async remove(@Param('id') id: string, @GetUser() currentUser: User) {
+    await this.usersService.remove(id, currentUser);
     return { message: 'User deleted successfully' };
   }
 }

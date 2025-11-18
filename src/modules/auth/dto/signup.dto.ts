@@ -26,4 +26,11 @@ export class SignupDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @ApiProperty({
+    example: '+1234567890',
+    description: 'Phone number for contact between buyers and sellers',
+  })
+  @IsString()
+  phoneNumber: string;
 }

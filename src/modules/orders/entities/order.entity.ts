@@ -43,6 +43,31 @@ export class Order {
   })
   total: number;
 
+  @ApiProperty({
+    example: 'Edificio E, Segundo piso',
+    description: 'Meeting place where the buyer will receive the product',
+    default: 'No especificado',
+  })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    default: 'No especificado',
+  })
+  meetingPlace: string;
+
+  @ApiProperty({
+    example: 'Efectivo',
+    description: 'Payment method for the order',
+    enum: ['Efectivo', 'Nequi', 'Daviplata', 'Transferencia bancaria', 'Otro'],
+    default: 'Efectivo',
+  })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    default: 'Efectivo',
+  })
+  paymentMethod: string;
+
   /**
    * Relación ManyToOne con User (buyer)
    * Un usuario puede tener muchas órdenes como comprador

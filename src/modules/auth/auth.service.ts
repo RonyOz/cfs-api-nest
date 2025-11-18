@@ -28,6 +28,7 @@ export class AuthService {
       username: dto.username,
       password: hashedPassword,
       role: 'user',
+      phoneNumber: dto.phoneNumber,
     });
 
     await this.usersRepository.save(user);

@@ -66,6 +66,7 @@ describe('UsersController', () => {
                 username: 'newuser',
                 email: 'newuser@test.com',
                 password: 'password123',
+                phoneNumber: '+1234567890',
             };
 
             usersService.create.mockResolvedValue(mockUser);
@@ -81,6 +82,7 @@ describe('UsersController', () => {
                 username: 'duplicate',
                 email: 'duplicate@test.com',
                 password: 'password123',
+                phoneNumber: '+1234567890',
             };
 
             usersService.create.mockRejectedValue(new Error('User already exists'));
@@ -119,16 +121,16 @@ describe('UsersController', () => {
         it('should return a user by id', async () => {
             usersService.findOne.mockResolvedValue(mockUser);
 
-            const result = await controller.findOne('1');
+            const result = await controller.findOne('1', mockUser as any);
 
             expect(result).toEqual(mockUser);
-            expect(usersService.findOne).toHaveBeenCalledWith('1');
+            expect(usersService.findOne).toHaveBeenCalledWith('1', mockUser);
         });
 
         it('should throw error when user not found', async () => {
             usersService.findOne.mockRejectedValue(new Error('User not found'));
 
-            await expect(controller.findOne('999')).rejects.toThrow(
+            await expect(controller.findOne('999', mockUser as any)).rejects.toThrow(
                 'User not found',
             );
         });
@@ -143,10 +145,10 @@ describe('UsersController', () => {
 
             usersService.update.mockResolvedValue(updatedUser);
 
-            const result = await controller.update('1', updateUserDto);
+            const result = await controller.update('1', updateUserDto, mockUser as any);
 
             expect(result).toEqual(updatedUser);
-            expect(usersService.update).toHaveBeenCalledWith('1', updateUserDto);
+            expect(usersService.update).toHaveBeenCalledWith('1', updateUserDto, mockUser);
         });
 
         it('should throw error when update fails', async () => {
@@ -156,7 +158,7 @@ describe('UsersController', () => {
 
             usersService.update.mockRejectedValue(new Error('Update failed'));
 
-            await expect(controller.update('1', updateUserDto)).rejects.toThrow(
+            await expect(controller.update('1', updateUserDto, mockUser as any)).rejects.toThrow(
                 'Update failed',
             );
         });

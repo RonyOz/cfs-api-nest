@@ -29,6 +29,13 @@ export class CreateUserDto {
   password: string;
 
   @ApiProperty({
+    example: '+1234567890',
+    description: 'Phone number for contacting the user',
+  })
+  @IsString()
+  phoneNumber: string;
+
+  @ApiProperty({
     example: 'user',
     description: 'The role of the user',
     enum: ValidRoles,
@@ -37,5 +44,5 @@ export class CreateUserDto {
   })
   @IsOptional()
   @IsEnum(ValidRoles)
-  role?: string;
+  role?: ValidRoles;
 }

@@ -5,20 +5,21 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { isUUID } from 'class-validator';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { ValidRoles } from '../auth/enums/roles.enum';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async findAll(paginationDto: PaginationDto) {
     try {
@@ -28,11 +29,7 @@ export class UsersService {
         skip: offset,
       });
 
-      // Remove password from response
-      return users.map(user => {
-        const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword;
-      });
+      return users.map((user) => this.toSafeUser(user));
     } catch (error) {
       this.handleException(error);
     }
@@ -40,7 +37,7 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, role = 'user', ...userDetails } = createUserDto;
+      const { password, role = ValidRoles.user, ...userDetails } = createUserDto;
 
       // Check if user already exists
       const existingUser = await this.userRepository.findOne({
@@ -62,61 +59,87 @@ export class UsersService {
 
       await this.userRepository.save(user);
 
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      return this.toSafeUser(user);
     } catch (error) {
       this.handleException(error);
     }
   }
 
-  async findOne(term: string) {
+  async findOne(term: string, viewer?: User) {
+    const where: FindOptionsWhere<User> | FindOptionsWhere<User>[] = isUUID(term)
+      ? { id: term }
+      : [{ email: term }, { username: term }];
+
     const user = await this.userRepository.findOne({
-      where: isUUID(term) 
-        ? { id: term }
-        : [{ email: term }, { username: term }]
+      where,
+      relations: ['products', 'orders'],
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ${term} not found`);
+      const identifier = isUUID(term) ? `id ${term}` : term;
+      throw new NotFoundException(`User with ${identifier} not found`);
     }
 
-    // Remove password from response
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    const safeUser = this.toSafeUser(user, viewer);
+    return {
+      ...safeUser,
+      products: user.products ?? [],
+      orders: user.orders ?? [],
+    };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const { password, ...userDetails } = updateUserDto;
-
-    const user = await this.userRepository.preload({
-      id: id,
-      ...userDetails,
-    });
+  async update(id: string, updateUserDto: UpdateUserDto, viewer?: User) {
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
 
     try {
-      // If password is being updated, hash it
+      const { password, username, email, role, phoneNumber } = updateUserDto;
+
+      if (username !== undefined) {
+        user.username = username;
+      }
+
+      if (email !== undefined) {
+        user.email = email;
+      }
+
+      if (role !== undefined) {
+        user.role = role;
+      }
+
+      if (phoneNumber !== undefined) {
+        user.phoneNumber = phoneNumber;
+      }
+
       if (password) {
         user.password = await bcrypt.hash(password, 10);
       }
 
       await this.userRepository.save(user);
-      return this.findOne(id);
+      return this.findOne(id, viewer);
     } catch (error) {
       this.handleException(error);
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUser?: User) {
     const user = await this.userRepository.findOne({ where: { id } });
-    
+
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    await this.userRepository.remove(user);
+    // Validar que el usuario no intente eliminarse a sí mismo
+    if (currentUser && currentUser.id === id) {
+      throw new BadRequestException('You cannot delete your own account');
+    }
+
+    try {
+      await this.userRepository.remove(user);
+    } catch (error) {
+      this.handleException(error);
+    }
   }
 
   // Method used by auth service to find user with password
@@ -128,14 +151,14 @@ export class UsersService {
     if (error.code === '23505') {
       throw new BadRequestException(error.detail);
     }
-    
+
     if (error instanceof BadRequestException || error instanceof NotFoundException) {
       throw error;
     }
-    
+
     throw new InternalServerErrorException('Unexpected error, check server logs');
   }
-  
+
   async findAllSellers(paginationDto: PaginationDto) {
     try {
       const { limit = 10, offset = 0 } = paginationDto;
@@ -151,15 +174,15 @@ export class UsersService {
 
       const sellers = await qb.getMany();
 
-      return sellers.map(u => {
-        const { password, ...rest } = u as any;
+      return sellers.map((u) => {
+        const safeUser = this.toSafeUser(u as User);
         return {
-          ...rest,
-          products: (u as any).products?.map(p => ({
+          ...safeUser,
+          products: (u as any).products?.map((p) => ({
             id: p.id,
             name: p.name,
             price: p.price,
-            stock: p.stock
+            stock: p.stock,
           })) ?? [],
           productsCount: (u as any).productsCount ?? 0,
         };
@@ -171,11 +194,13 @@ export class UsersService {
 
   /**
    * Perfil público de un vendedor:
-   * - Datos públicos del usuario (sin password, sin email si quieres privacidad)
-   * - Productos (lista resumida)
-   * - Historial de ventas: orders que incluyen productos del seller, con totales por orderItem
+   * - Datos públicos del usuario (incluyendo phoneNumber)
+   * - Productos con información completa
+   * - Conteo de productos
+   * - Estadísticas de órdenes (total y del mes actual)
+   * - Historial de ventas (salesHistory) con detalles de cada orden
    *
-   * Nota: se retorna información pública solamente.
+   * Nota: Información pública completa para mostrar en perfil de vendedor.
    */
   async findSellerProfile(id: string) {
     // Validación básica
@@ -183,7 +208,7 @@ export class UsersService {
       throw new BadRequestException('Invalid UUID');
     }
 
-    // 1) Buscar usuario
+    // Buscar usuario con sus productos
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['products'],
@@ -192,74 +217,129 @@ export class UsersService {
     if (!user) return null;
 
     try {
-      // 2) Historial de ventas: orders que contienen productos de este seller.
-      // Necesitamos acceder a Order / OrderItem; usamos QueryBuilder genérico.
-
-      const salesQb = this.userRepository.manager.createQueryBuilder()
-        .select([
-          'o.id AS orderId',
-          'o.status AS orderStatus',
-          'o.createdAt AS orderCreatedAt',
-          'oi.id AS orderItemId',
-          'oi.quantity AS quantity',
-          'oi.price AS itemPrice',
-          'p.id AS productId',
-          'p.name AS productName'
-        ])
+      // Calcular estadísticas de órdenes
+      // Contamos las órdenes donde este vendedor tiene productos
+      const ordersQuery = this.userRepository.manager
+        .createQueryBuilder()
+        .select('DISTINCT o.id')
         .from('orders', 'o')
-        .innerJoin('order_items', 'oi', 'oi.orderId = o.id')
-        .innerJoin('products', 'p', 'p.id = oi.productId')
-        .where('p.sellerId = :sellerId', { sellerId: id })
-        .orderBy('o.createdAt', 'DESC');
+        .innerJoin('order_items', 'oi', 'oi."orderId" = o.id')
+        .innerJoin('products', 'p', 'p.id = oi."productId"')
+        .where('p."sellerId" = :sellerId', { sellerId: id });
 
-      const rawSales = await salesQb.execute();
+      const totalOrdersResult = await ordersQuery.getRawMany();
+      const totalOrders = totalOrdersResult.length;
 
-      // Mapear rawSales a estructura agrupada por order
-      const salesMap = new Map<string, any>();
-      for (const row of rawSales) {
-        const orderId = row.orderid;
-        if (!salesMap.has(orderId)) {
-          salesMap.set(orderId, {
-            id: orderId,
-            status: row.orderstatus,
-            createdAt: row.ordercreatedat,
-            items: []
+      // Órdenes del mes actual
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const ordersThisMonthQuery = this.userRepository.manager
+        .createQueryBuilder()
+        .select('DISTINCT o.id')
+        .from('orders', 'o')
+        .innerJoin('order_items', 'oi', 'oi."orderId" = o.id')
+        .innerJoin('products', 'p', 'p.id = oi."productId"')
+        .where('p."sellerId" = :sellerId', { sellerId: id })
+        .andWhere('o.createdAt >= :startOfMonth', { startOfMonth });
+
+      const ordersThisMonthResult = await ordersThisMonthQuery.getRawMany();
+      const ordersThisMonth = ordersThisMonthResult.length;
+
+      // Obtener historial de ventas con detalles
+      // Usando las relaciones de TypeORM en lugar de raw SQL
+      const productIds = (user.products ?? []).map((p) => p.id);
+
+      let salesHistory: any[] = [];
+
+      if (productIds.length > 0) {
+        const salesHistoryQuery = await this.userRepository.manager
+          .createQueryBuilder()
+          .select('o.id', 'orderId')
+          .addSelect('o.status', 'orderStatus')
+          .addSelect('o.total', 'orderTotal')
+          .addSelect('o.createdAt', 'orderCreatedAt')
+          .addSelect('oi.id', 'orderItemId')
+          .addSelect('oi.quantity', 'itemQuantity')
+          .addSelect('oi.price', 'itemPrice')
+          .addSelect('p.id', 'productId')
+          .addSelect('p.name', 'productName')
+          .from('orders', 'o')
+          .innerJoin('order_items', 'oi', 'oi."orderId" = o.id')
+          .innerJoin('products', 'p', 'p.id = oi."productId"')
+          .where('p.id IN (:...productIds)', { productIds })
+          .orderBy('o.createdAt', 'DESC')
+          .getRawMany();
+
+        // Agrupar items por orden
+        const ordersMap = new Map();
+        salesHistoryQuery.forEach((row) => {
+          if (!ordersMap.has(row.orderId)) {
+            ordersMap.set(row.orderId, {
+              id: row.orderId,
+              status: row.orderStatus,
+              total: Number(row.orderTotal),
+              createdAt: row.orderCreatedAt,
+              items: [],
+            });
+          }
+          ordersMap.get(row.orderId).items.push({
+            orderItemId: row.orderItemId,
+            productId: row.productId,
+            productName: row.productName,
+            quantity: Number(row.itemQuantity),
+            itemPrice: Number(row.itemPrice),
           });
-        }
-        salesMap.get(orderId).items.push({
-          orderItemId: row.orderitemid,
-          productId: row.productid,
-          productName: row.productname,
-          quantity: Number(row.quantity),
-          itemPrice: Number(row.itemprice),
         });
+
+        salesHistory = Array.from(ordersMap.values());
       }
 
-      const sales = Array.from(salesMap.values());
-
-      // Respuesta pública (omitimos password)
-      const { password, email, twoFactorSecret, ...publicUser } = user as any;
+      // Respuesta pública (omitimos solo password y twoFactorSecret)
+      const { password, twoFactorSecret, ...publicUser } = user as any;
 
       return {
-        seller: {
-          id: publicUser.id,
-          username: publicUser.username,
-          // si quieres exponer email, quítalo de aquí
-          // email: publicUser.email,
-          twoFactorEnabled: publicUser.twoFactorEnabled,
-        },
-        products: (user.products ?? []).map(p => ({
+        id: publicUser.id,
+        username: publicUser.username,
+        email: publicUser.email,
+        phoneNumber: publicUser.phoneNumber,
+        role: publicUser.role,
+        twoFactorEnabled: publicUser.twoFactorEnabled,
+        products: (user.products ?? []).map((p) => ({
           id: p.id,
           name: p.name,
           description: p.description,
           price: p.price,
           stock: p.stock,
+          imageUrl: p.imageUrl,
         })),
-        salesHistory: sales,
+        productsCount: user.products?.length ?? 0,
+        totalOrders,
+        ordersThisMonth,
+        salesHistory, // ✨ Historial completo de ventas
       };
     } catch (error) {
       this.handleException(error);
     }
   }
 
+  private toSafeUser(user: User, viewer?: User) {
+    if (!user) {
+      return null;
+    }
+
+    const { password, twoFactorSecret, ...rest } = user as any;
+    const safeUser: any = { ...rest };
+
+    if (!viewer || (viewer.id !== user.id && viewer.role !== 'admin')) {
+      delete safeUser.phoneNumber;
+    }
+
+
+    return safeUser;
+  }
 }
+
+
+

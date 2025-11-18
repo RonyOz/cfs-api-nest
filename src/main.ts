@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors({ origin: true, methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', allowedHeaders: '*', credentials: true });
 
   app.setGlobalPrefix('api/v1', {
-    exclude: ['api-docs'],
+    exclude: ['api-docs', 'graphql'],
   });
 
   const config = new DocumentBuilder()

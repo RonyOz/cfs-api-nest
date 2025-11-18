@@ -29,6 +29,14 @@ export class User {
   @Column()
   username: string;
 
+  @ApiProperty({
+    example: '+1234567890',
+    description: 'User contact phone number',
+    required: false,
+  })
+  @Column({ name: 'phone_number', type: 'varchar', nullable: true })
+  phoneNumber?: string | null;
+
   @Column()
   password: string;
 
@@ -39,7 +47,7 @@ export class User {
   })
   @Column({
     type: 'text',
-    default: ['user']
+    default: 'user',
   })
   role: string;
 
