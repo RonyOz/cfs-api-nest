@@ -4,18 +4,32 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class StorageService {
-  private supabase: SupabaseClient;
-  private bucketName = 'product-images';
+  private supabase: SupabaseClient | null = null;
+  private readonly bucketName = 'product-images';
+  private readonly supabaseUrl?: string;
+  private readonly supabaseKey?: string;
 
   constructor(private configService: ConfigService) {
-    const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const supabaseKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    this.supabaseUrl = this.configService.get<string>('SUPABASE_URL');
+    this.supabaseKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+    if (this.supabaseUrl && this.supabaseKey) {
+      this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
+    }
+  }
+
+  private getClient(): SupabaseClient {
+    if (!this.supabaseUrl || !this.supabaseKey) {
+      throw new InternalServerErrorException(
+        'Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY',
+      );
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    if (!this.supabase) {
+      this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
+    }
+
+    return this.supabase;
   }
 
   async createSignedUploadUrl(fileName: string): Promise<{
@@ -30,7 +44,9 @@ export class StorageService {
       const path = `products/${timestamp}-${fileName}`;
 
       // Create signed upload URL
-      const { data, error } = await this.supabase.storage
+      const supabase = this.getClient();
+
+      const { data, error } = await supabase.storage
         .from(this.bucketName)
         .createSignedUploadUrl(path);
 
@@ -39,7 +55,7 @@ export class StorageService {
       }
 
       // Get public URL for the file
-      const { data: publicUrlData } = this.supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from(this.bucketName)
         .getPublicUrl(path);
 
@@ -59,7 +75,8 @@ export class StorageService {
 
   async deleteFile(path: string): Promise<void> {
     try {
-      const { error } = await this.supabase.storage
+      const supabase = this.getClient();
+      const { error } = await supabase.storage
         .from(this.bucketName)
         .remove([path]);
 

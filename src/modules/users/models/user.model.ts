@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 import { ProductModel } from '../../products/models/product.model';
+import { ValidRoles } from '../../auth/enums/roles.enum';
 
 @ObjectType('User')
 export class UserModel {
@@ -12,8 +13,8 @@ export class UserModel {
     @Field()
     username: string;
 
-    @Field()
-    role: string;
+    @Field(() => ValidRoles)
+    role: ValidRoles;
 
     @Field()
     twoFactorEnabled: boolean;

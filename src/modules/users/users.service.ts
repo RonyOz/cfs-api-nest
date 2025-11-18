@@ -5,13 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { isUUID } from 'class-validator';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { ValidRoles } from '../auth/enums/roles.enum';
 
 @Injectable()
 export class UsersService {
@@ -40,7 +41,7 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const { password, role = 'user', ...userDetails } = createUserDto;
+      const { password, role = ValidRoles.user, ...userDetails } = createUserDto;
 
       // Check if user already exists
       const existingUser = await this.userRepository.findOne({
@@ -71,33 +72,48 @@ export class UsersService {
   }
 
   async findOne(term: string) {
+    const where: FindOptionsWhere<User> | FindOptionsWhere<User>[] = isUUID(term)
+      ? { id: term }
+      : [{ email: term }, { username: term }];
+
     const user = await this.userRepository.findOne({
-      where: isUUID(term) 
-        ? { id: term }
-        : [{ email: term }, { username: term }]
+      where,
+      relations: ['products', 'orders'],
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ${term} not found`);
+      const identifier = isUUID(term) ? `id ${term}` : term;
+      throw new NotFoundException(`User with ${identifier} not found`);
     }
 
-    // Remove password from response
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    const { password, products, orders, ...safeUser } = user;
+    return {
+      ...safeUser,
+      products: products ?? [],
+      orders: orders ?? [],
+    };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const { password, ...userDetails } = updateUserDto;
-
-    const user = await this.userRepository.preload({
-      id: id,
-      ...userDetails,
-    });
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
 
     try {
-      // If password is being updated, hash it
+      const { password, username, email, role } = updateUserDto;
+
+      if (username !== undefined) {
+        user.username = username;
+      }
+
+      if (email !== undefined) {
+        user.email = email;
+      }
+
+      if (role !== undefined) {
+        user.role = role;
+      }
+
       if (password) {
         user.password = await bcrypt.hash(password, 10);
       }

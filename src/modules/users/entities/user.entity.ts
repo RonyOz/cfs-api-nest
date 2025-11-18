@@ -39,7 +39,7 @@ export class User {
   })
   @Column({
     type: 'text',
-    default: ['user']
+    default: 'user',
   })
   role: string;
 

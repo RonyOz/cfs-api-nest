@@ -37,5 +37,5 @@ export class CreateUserDto {
   })
   @IsOptional()
   @IsEnum(ValidRoles)
-  role?: string;
+  role?: ValidRoles;
 }
